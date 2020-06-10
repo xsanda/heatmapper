@@ -14,7 +14,8 @@
       :source="geojson"
       @click="handleClick"
     /> -->
-    <MglFullscreenControl position="top-right" /> <MglScaleControl />
+    <MglFullscreenControl position="top-right" />
+    <MglScaleControl position="bottom-left" />
   </MglMap>
 </template>
 
