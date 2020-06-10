@@ -2,8 +2,8 @@
   <MglMap
     container="map-test"
     :center.sync="center"
-    :accessToken="token"
-    :mapStyle="mapStyle"
+    :access-token="token"
+    :map-style="mapStyle"
     :zoom="zoom"
   >
     <!-- <MglMarker :coordinates.sync="markerCoordinates" color="green" /> -->
@@ -13,7 +13,7 @@
       :layerId="layerId"
       :source="geojson"
       @click="handleClick"
-    /> -->
+    />-->
     <MglFullscreenControl position="top-right" />
     <MglScaleControl position="bottom-left" />
   </MglMap>
@@ -21,7 +21,13 @@
 
 <script lang="ts">
 import { MglMap, MglScaleControl, MglFullscreenControl } from 'vue-mapbox';
+
 export default {
+  components: {
+    MglMap,
+    MglFullscreenControl,
+    MglScaleControl,
+  },
   data() {
     return {
       token:
@@ -38,11 +44,6 @@ export default {
         rel: 'stylesheet',
       },
     ],
-  },
-  components: {
-    MglMap,
-    MglFullscreenControl,
-    MglScaleControl,
   },
 };
 </script>
