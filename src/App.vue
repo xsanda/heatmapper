@@ -1,33 +1,39 @@
 <template>
-  <div id="app">
-    <HelloWorld msg="Welcome to Your Vue.js App" />
+  <div id="app" hidden>
+    <Sidebar />
     <Map />
   </div>
 </template>
 
 <script lang="ts">
-import HelloWorld from './components/HelloWorld.vue';
+import Sidebar from './components/Sidebar.vue';
 import Map from './components/Map.vue';
 
 export default {
   name: 'App',
   components: {
-    HelloWorld,
+    Sidebar,
     Map,
   },
 };
 </script>
 
 <style>
+html {
+  height: 100%;
+}
+body {
+  height: 100%;
+  margin: 0;
+}
 #app {
+  height: 100%;
+  display: flex;
+  align-items: stretch;
+  flex-direction: row;
   font-family: Avenir, Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   color: #2c3e50;
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 0;
-  right: 0;
 }
 </style>
