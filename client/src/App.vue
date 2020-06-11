@@ -18,13 +18,12 @@
 
 <script lang="ts">
 import Sidebar from './components/Sidebar.vue';
-import Map from './components/Map.vue';
 
 export default {
   name: 'App',
   components: {
     Sidebar,
-    Map,
+    Map: () => import('./components/Map.vue'),
   },
   data() {
     return {
