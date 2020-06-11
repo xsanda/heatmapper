@@ -34,9 +34,17 @@
         </div>
       </label>
     </div>
-    <button @click="load">
-      Load
-    </button>
+    <div class="buttons">
+      <button @click="load">
+        Load
+      </button>
+      <button @click="sockets">
+        Sockets
+      </button>
+    </div>
+    <p :class="[error&&'error']">
+      {{ statusMessage }}
+    </p>
   </aside>
 </template>
 
@@ -51,16 +59,102 @@ export default {
       end: null,
       activityType: '',
       activityTypes: Object.entries(activityTypes).sort((a, b) => a[1].localeCompare(b[1])),
+      stats: {},
+      error: null,
+      message: null,
     };
   },
+  computed: {
+    statusMessage() {
+      const countActivities = (n) => {
+        switch (n) {
+          case 0: return 'no activities';
+          case 1: return '1 activity';
+          default: return `${n} activities`;
+        }
+      };
+      const findingString = ({ started = false, finished = false, length = 0 } = {}) => {
+        if (finished) return `found ${countActivities(length)}`;
+        if (started && length) return `found ${countActivities(length)} so far`;
+        if (started) return 'finding activities';
+        return '';
+      };
+      const filteringString = ({ started = false, finished = false, length = 0 } = {}) => {
+        if (finished) return `filtered to ${countActivities(length)}`;
+        if (started) return 'Filtering activities';
+        return '';
+      };
+      const mapString = ({ started = false, finished = false } = {}) => {
+        if (finished) return 'loaded all maps';
+        if (started) return 'loading maps';
+        return '';
+      };
+
+      const nonEmpties = (...args) => args.filter(Boolean);
+      const capitalise = (string) => string.slice(0, 1).toUpperCase() + string.slice(1);
+
+      const statsMessage = () => {
+        const { finding = {}, filtering = {}, maps = {} } = this.stats;
+        return capitalise(nonEmpties(findingString(finding), filteringString(filtering), mapString(maps)).join(', '));
+      };
+      return this.error || this.message || statsMessage();
+    },
+  },
   methods: {
+    queryString(params) {
+      const qs = new URLSearchParams();
+      Object.keys(params).forEach((key) => qs.append(key, params[key]));
+      return qs.toString();
+    },
+    setError(message) { this.message = null; this.error = message; },
+    setMessage(message) { this.message = message; this.error = null; },
     async load() {
+      this.setMessage('Fetching activities');
+
       const qs = new URLSearchParams();
       const params = { type: this.activityType };
       Object.keys(params).forEach((key) => qs.append(key, params[key]));
-      const res = await fetch(`/api/activities?${qs}`);
+
+      const res = await fetch(`/api/activities?${this.queryString({ type: this.activityType })}`);
+      if (!res.ok) {
+        this.setError('Server not responding');
+        return;
+      }
       const activities = await res.json();
-      this.$emit('loaded', activities);
+      this.$emit('addActivities', activities);
+      this.setMessage(null);
+    },
+    async sockets() {
+      const socket = new WebSocket(`ws://${window.location.host}/api/activities?${this.queryString({ type: this.activityType })}`);
+      let activities = [];
+      let errored = false;
+
+      socket.onerror = () => {
+        errored = true;
+        this.setError('Error fetching activities');
+      };
+      socket.onopen = () => {
+        this.status = { status: 'connected' };
+      };
+      socket.onmessage = (message) => {
+        const data = JSON.parse(message.data);
+        if (data.type === 'stats') {
+          this.stats = data;
+          if (data.maps.sent) {
+            // all done
+          }
+        } else if (data.type === 'activities') {
+          activities = data.activities;
+          this.$emit('addActivities', activities);
+        } else if (data.type === 'maps') {
+          this.$emit('addActivityMaps', data.chunk);
+        }
+      };
+      socket.onclose = () => {
+        if (!errored) {
+          this.stats = { status: 'disconnected' };
+        }
+      };
     },
   },
 };
@@ -80,8 +174,13 @@ export default {
   }
 }
 
-aside > button {
+aside > .buttons {
   margin: 5px auto;
-  display: block;
+  display: flex;
+  justify-content: space-evenly;
+}
+
+.error {
+  color: red;
 }
 </style>

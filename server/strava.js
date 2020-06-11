@@ -115,15 +115,26 @@ async function getPage(i) {
 /**
  * Fetches your data from the Strava API
  */
-// eslint-disable-next-line import/prefer-default-export
-export async function* getFullStravaActivities() {
+export async function* getStravaActivityPages() {
   let page;
   let i = 1;
-  do {
+  while (true) {
     // eslint-disable-next-line no-await-in-loop
     page = await getPage(i);
     console.log('page', i, 'has length', page.length);
+    if (page.length === 0) break;
+    yield page;
     i += 1;
+  }
+}
+
+/**
+ * Fetches your data from the Strava API
+ */
+// eslint-disable-next-line import/prefer-default-export
+export async function* getStravaActivities() {
+  // eslint-disable-next-line no-restricted-syntax
+  for await (const page of getStravaActivityPages()) {
     yield* page;
-  } while (page.length);
+  }
 }

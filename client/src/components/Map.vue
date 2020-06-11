@@ -67,7 +67,7 @@ export default {
         if (neighbours.length > 0) break;
       }
       if (neighbours.length > 0) {
-        this.select(neighbours[0].id);
+        this.select(neighbours[neighbours.length - 1].id);
       } else this.select(undefined);
     },
     select(id) {
