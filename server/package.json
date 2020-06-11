@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "run": "node index.js"
+    "serve": "node index.js"
   },
   "type": "module",
   "dependencies": {
