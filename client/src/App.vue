@@ -4,8 +4,10 @@
     hidden
   >
     <Sidebar
-      :activities.sync="activities"
+      :activities="activities"
       :selected.sync="selected"
+      @addActivities="addActivities"
+      @addActivityMaps="addActivityMaps"
     />
     <Map
       :center.sync="location"
@@ -32,6 +34,17 @@ export default {
       activities: [],
       selected: undefined,
     };
+  },
+  methods: {
+    addActivities(activities) {
+      this.activities = activities;
+    },
+    addActivityMaps(maps) {
+      Object.entries(maps).forEach(([activity, map]) => {
+        const i = this.activities.findIndex(({ id }) => id.toString() === activity);
+        this.$set(this.activities, i, { ...this.activities[i], map });
+      });
+    },
   },
 };
 </script>

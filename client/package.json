@@ -10,6 +10,7 @@
   "dependencies": {
     "@mapbox/polyline": "^1.1.1",
     "core-js": "^3.6.5",
+    "express-ws": "^4.0.0",
     "mapbox-gl": "^0.53.0",
     "moment": "^2.26.0",
     "moment-locales-webpack-plugin": "^1.2.0",

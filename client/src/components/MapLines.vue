@@ -30,7 +30,7 @@ export default {
           type: 'FeatureCollection',
           features:
             this.activities
-              .filter((activity) => activity.map !== null)
+              .filter((activity) => activity.map)
               .map((activity) => ({
                 type: 'Feature',
                 id: activity.id,
@@ -57,7 +57,7 @@ export default {
             0.5,
             10,
             0.1,
-            17,
+            14,
             0.1,
             22,
             0.2,

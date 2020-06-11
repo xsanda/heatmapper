@@ -1,6 +1,9 @@
 <template>
   <div class="sidebar">
-    <Form @loaded="loadedActivities" />
+    <Form
+      @addActivities="$emit('addActivities', $event)"
+      @addActivityMaps="$emit('addActivityMaps', $event)"
+    />
     <ul>
       <li
         v-for="activity of activities"
@@ -25,22 +28,33 @@ import Form from './Form.vue';
 export default {
   name: 'Sidebar',
   components: { Form },
+  data() {
+    return { localSelected: null };
+  },
   props: {
     activities: { type: Array, default: () => [] },
     selected: { type: Number, default: undefined },
   },
   methods: {
-    loadedActivities(activities) {
-      this.$emit('update:activities', activities);
-    },
     date(string) {
       moment.locale(window.navigator.userLanguage || window.navigator.language);
       return moment(string).format('ll');
     },
     select(id) {
+      this.localSelected = id;
       this.$emit('update:selected', id);
     },
   },
+  updated() {
+    this.$nextTick(() => {
+      if (this.selected !== this.localSelected) {
+        this.localSelected = this.selected;
+        const el = this.$el.querySelector('.selected');
+        if (el) el.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      }
+    });
+  },
+
 };
 </script>
 
@@ -54,9 +68,13 @@ export default {
   > ul {
     flex:1;
     overflow: auto;
+    margin: 0;
+    padding: 1em 0;
 
     > li {
       cursor: pointer;
+      list-style: none;
+      padding-left:2em;
 
       &:hover {
         background: #eee;
