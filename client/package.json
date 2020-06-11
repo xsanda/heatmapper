@@ -12,6 +12,7 @@
     "core-js": "^3.6.5",
     "mapbox-gl": "^0.53.0",
     "moment": "^2.26.0",
+    "moment-locales-webpack-plugin": "^1.2.0",
     "vue": "^2.6.11",
     "vue-head": "^2.2.0",
     "vue-mapbox": "^0.4.1"

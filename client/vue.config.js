@@ -1,3 +1,5 @@
+const MomentLocalesPlugin = require('moment-locales-webpack-plugin');
+
 module.exports = {
   chainWebpack(config) {
     config.plugin('html').tap((args) => {
@@ -7,6 +9,17 @@ module.exports = {
   },
   configureWebpack: {
     resolve: { extensions: ['*', '.vue', '.js'] },
+    optimization: {
+      splitChunks: {
+        minSize: 10000,
+        maxSize: 250000,
+      },
+    },
+    plugins: [
+      new MomentLocalesPlugin({
+        localesToKeep: ['en-gb'],
+      }),
+    ],
   },
   devServer: {
     hot: true,
