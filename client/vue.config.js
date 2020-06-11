@@ -4,10 +4,9 @@ module.exports = {
       const [arg, rest] = args;
       return [{ ...arg, title: 'Heatmapper' }, rest];
     });
-    config.resolve.alias.set('!', '.');
   },
   configureWebpack: {
-    resolve: { extensions: ['*', '.ts', '.vue', '.js'] },
+    resolve: { extensions: ['*', '.vue', '.js'] },
   },
   devServer: {
     hot: true,
