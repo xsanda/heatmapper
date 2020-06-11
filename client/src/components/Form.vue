@@ -54,8 +54,13 @@ export default {
     };
   },
   methods: {
-    load() {
-      this.$emit('loaded', [1, 2, 3, 4, 5]);
+    async load() {
+      const qs = new URLSearchParams();
+      const params = { type: this.activityType };
+      Object.keys(params).forEach((key) => qs.append(key, params[key]));
+      const res = await fetch(`/api/activities?${qs}`);
+      const activities = await res.json();
+      this.$emit('loaded', activities);
     },
   },
 };
@@ -73,5 +78,10 @@ export default {
       display: table-cell;
     }
   }
+}
+
+aside > button {
+  margin: 5px auto;
+  display: block;
 }
 </style>

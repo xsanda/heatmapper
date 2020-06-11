@@ -1,7 +1,18 @@
 <template>
-  <div id="app" hidden>
-    <Sidebar />
-    <Map />
+  <div
+    id="app"
+    hidden
+  >
+    <Sidebar
+      :activities.sync="activities"
+      :selected.sync="selected"
+    />
+    <Map
+      :center.sync="location"
+      :zoom.sync="zoom"
+      :activities="activities"
+      :selected.sync="selected"
+    />
   </div>
 </template>
 
@@ -15,15 +26,21 @@ export default {
     Sidebar,
     Map,
   },
+  data() {
+    return {
+      location: { lat: 51.45, lng: -2.6 },
+      zoom: 10,
+      activities: [],
+      selected: undefined,
+    };
+  },
 };
 </script>
 
 <style>
-html {
+html,body {
   height: 100%;
-}
-body {
-  height: 100%;
+  overflow: hidden;
   margin: 0;
 }
 #app {
@@ -31,7 +48,7 @@ body {
   display: flex;
   align-items: stretch;
   flex-direction: row;
-  font-family: Avenir, Helvetica, Arial, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   color: #2c3e50;
