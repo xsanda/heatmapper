@@ -9,13 +9,8 @@
     @update:zoom="$emit('update:zoom',$event)"
     @click="click"
   >
-    <!-- <map-line
-      v-for="activity of activities"
-      :activity="activity"
-      :key="activity.id"
-    /> -->
     <map-lines
-      :activities="unselectedActivities"
+      :activities="activities"
     />
     <map-lines
       :activities="selectedActivities"
@@ -40,9 +35,6 @@ export default {
     selected: { type: Number, default: undefined },
   },
   computed: {
-    unselectedActivities() {
-      return this.activities.filter((activity) => activity.id !== this.selected);
-    },
     selectedActivities() {
       return this.activities.filter((activity) => activity.id === this.selected);
     },
