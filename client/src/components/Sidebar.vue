@@ -10,12 +10,15 @@
         :key="activity.id"
         :class="[selected === activity.id && 'selected']"
         @click="select(activity.id)"
+        @dblclick="forceSelect(activity.id)"
       >
         {{ activity.name }}
-        (<a
-          :href="'https://www.strava.com/activities/'+activity.id"
-          target="_blank"
-        >{{ date(activity.date) }}</a>)
+        <span class="date">
+          (<a
+            :href="'https://www.strava.com/activities/'+activity.id"
+            target="_blank"
+          >{{ date(activity.date) }}</a>)
+        </span>
       </li>
     </ul>
   </div>
@@ -43,6 +46,15 @@ export default {
     select(id) {
       this.localSelected = id;
       this.$emit('update:selected', id);
+    },
+    forceSelect(id) {
+      window.getSelection?.().removeAllRanges();
+      this.localSelected = id;
+      this.$emit('update:selected', null);
+      this.$nextTick(() => {
+        this.$emit('update:selected', id);
+      });
+      return false;
     },
   },
   updated() {
@@ -74,7 +86,8 @@ export default {
     > li {
       cursor: pointer;
       list-style: none;
-      padding-left:2em;
+      padding: 2px 8px;
+      font-size: 14px;
 
       &:hover {
         background: #eee;
@@ -82,6 +95,10 @@ export default {
 
       &.selected {
         background: #ccc;
+      }
+
+      .date {
+        display: inline-block;
       }
     }
   }
