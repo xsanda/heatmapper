@@ -3,11 +3,11 @@
     container="map-test"
     :map-options="{ style: mapStyle, center, zoom }"
     :center="center"
-    @update:center="$emit('update:center', $event)"
     :access-token="token"
     :map-style="mapStyle"
     :zoom="zoom"
-    @update:zoom="$emit('update:zoom', $event)"
+    @map-moveend="moveend"
+    @map-zoomend="zoomend"
     @map-click="click"
     @map-load="mapLoaded"
     :fullscreen-control="{ show: true, position:'top-right' }"
@@ -18,6 +18,7 @@
 
 <script>
 import Mapbox from 'mapbox-gl-vue';
+import { LngLatBounds } from 'mapbox-gl';
 import polyline from '@mapbox/polyline';
 
 const fromZoom = (...pairs) => [
@@ -122,8 +123,41 @@ export default {
     selectedActivities(next) {
       this.applyActivities(next, 'selected');
     },
+    selected() {
+      this.$nextTick(() => {
+        if (this.selected !== this.localSelected) {
+          this.localSelected = this.selected;
+          this.flyTo(this.selectedActivities);
+        }
+      });
+    },
   },
   methods: {
+    flyTo(activities) {
+      const { map } = this;
+      if (!map || activities.length === 0) return;
+      const coordinates = activities.flatMap(({ map: line }) => (
+        polyline.decode(line).map((pair) => pair.reverse())
+      ));
+      const bounds = coordinates.reduce((acc, coord) => (
+        acc.extend(coord)
+      ), new LngLatBounds(coordinates[0], coordinates[0]));
+      const padding = 20;
+      const canvas = map.getCanvas();
+      const w = canvas.width;
+      const h = canvas.height;
+      const screenNorthEast = map.unproject([w - padding, padding]);
+      const screenSouthWest = map.unproject([padding, h - padding]);
+      const screenBounds = new LngLatBounds(screenSouthWest, screenNorthEast);
+      if (!screenBounds.contains(bounds.getSouthWest())
+        || !screenBounds.contains(bounds.getSouthEast())) {
+        map.fitBounds(bounds, {
+          padding,
+          linear: true,
+          maxZoom: map.getZoom(),
+        });
+      }
+    },
     applyActivities(next, sourceID) {
       this.map?.getSource(sourceID).setData(makeGeoJsonData(next));
     },
@@ -134,15 +168,15 @@ export default {
       this.applyActivities(this.activities, 'lines');
       this.applyActivities(this.selected, 'selected');
     },
-    click(e) {
+    click(map, e) {
       const surround = (point, offset) => [
         { x: point.x - offset, y: point.y + offset },
         { x: point.x + offset, y: point.y - offset },
       ];
       let neighbours = [];
       for (let i = 0; i < 5; i += 1) {
-        neighbours = e.map.queryRenderedFeatures(
-          surround(e.mapboxEvent.point, i),
+        neighbours = map.queryRenderedFeatures(
+          surround(e.point, i),
           { layers: ['lines', 'selected'] },
         );
         if (neighbours.length > 0) break;
@@ -154,6 +188,12 @@ export default {
     select(id) {
       this.localSelected = id;
       this.$emit('update:selected', id);
+    },
+    zoomend(map) {
+      this.$emit('update:zoom', map.getZoom());
+    },
+    moveend(map) {
+      this.$emit('update:center', map.getCenter());
     },
   },
   head: {
