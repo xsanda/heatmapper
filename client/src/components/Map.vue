@@ -111,8 +111,8 @@ export default {
   data() {
     return {
       token:
-        'pk.eyJ1IjoiY2hhcmRpbmciLCJhIjoiY2tiYWp0cndkMDc0ZjJybXhlcHdoM2Z3biJ9.XUwOLV17ZBXE8dhp198dqg',
-      mapStyle: 'mapbox://styles/mapbox/outdoors-v11',
+        'pk.eyJ1Ijoic3RyYXZhIiwiYSI6IlpoeXU2U0UifQ.c7yhlZevNRFCqHYm6G6Cyg',
+      mapStyle: 'mapbox://styles/strava/ck2gt6oil0c7y1cnvlz1uphnu',
       localSelected: null,
     };
   },
@@ -150,7 +150,7 @@ export default {
       const screenSouthWest = map.unproject([padding, h - padding]);
       const screenBounds = new LngLatBounds(screenSouthWest, screenNorthEast);
       if (!screenBounds.contains(bounds.getSouthWest())
-        || !screenBounds.contains(bounds.getSouthEast())) {
+        || !screenBounds.contains(bounds.getNorthEast())) {
         map.fitBounds(bounds, {
           padding,
           linear: true,
@@ -165,8 +165,10 @@ export default {
       sources.forEach((id) => map.addSource(id, makeGeoJson()));
       Object.entries(layers).forEach(([id, layer]) => map.addLayer(buildLineLayer(id, layer)));
       this.map = map;
-      this.applyActivities(this.activities, 'lines');
-      this.applyActivities(this.selected, 'selected');
+      this.$nextTick(() => {
+        this.applyActivities(this.activities, 'lines');
+        this.applyActivities(this.selectedActivities, 'selected');
+      });
     },
     click(map, e) {
       const surround = (point, offset) => [

@@ -1,4 +1,3 @@
-const MomentLocalesPlugin = require('moment-locales-webpack-plugin');
 const Webpack = require('webpack');
 
 module.exports = {
@@ -17,9 +16,6 @@ module.exports = {
       },
     },
     plugins: [
-      new MomentLocalesPlugin({
-        localesToKeep: ['en-gb'],
-      }),
       new Webpack.ProvidePlugin({
         mapboxgl: 'mapbox-gl',
       }),

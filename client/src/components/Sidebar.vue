@@ -17,7 +17,7 @@
           (<a
             :href="'https://www.strava.com/activities/'+activity.id"
             target="_blank"
-          >{{ date(activity.date) }}</a>)
+          >{{ activity.dateString }}</a>)
         </span>
       </li>
     </ul>
@@ -25,7 +25,6 @@
 </template>
 
 <script>
-import moment from 'moment';
 import Form from './Form.vue';
 
 export default {
@@ -39,10 +38,6 @@ export default {
     selected: { type: Number, default: undefined },
   },
   methods: {
-    date(string) {
-      moment.locale(window.navigator.userLanguage || window.navigator.language);
-      return moment(string).format('ll');
-    },
     select(id) {
       this.localSelected = id;
       this.$emit('update:selected', id);
