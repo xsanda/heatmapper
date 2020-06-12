@@ -1,31 +1,23 @@
 <template>
-  <mgl-map
+  <mapbox
     container="map-test"
+    :map-options="{ style: mapStyle, center, zoom }"
     :center="center"
-    @update:center="$emit('update:center',$event)"
+    @update:center="$emit('update:center', $event)"
     :access-token="token"
     :map-style="mapStyle"
     :zoom="zoom"
-    @update:zoom="$emit('update:zoom',$event)"
-    @click="click"
-    @load="mapLoaded"
-  >
-    <!-- <map-lines
-      :activities="activities"
-    />
-    <map-lines
-      :activities="selectedActivities"
-      highlighted
-    /> -->
-    <mgl-fullscreen-control position="top-right" />
-    <mgl-scale-control position="bottom-left" />
-  </mgl-map>
+    @update:zoom="$emit('update:zoom', $event)"
+    @map-click="click"
+    @map-load="mapLoaded"
+    :fullscreen-control="{ show: true, position:'top-right' }"
+    :scale-control="{ show: true, position:'bottom-left' }"
+    :nav-control="{ show: false }"
+  />
 </template>
 
 <script>
-import {
-  MglMap, MglScaleControl, MglFullscreenControl,
-} from 'vue-mapbox';
+import Mapbox from 'mapbox-gl-vue';
 import polyline from '@mapbox/polyline';
 
 const fromZoom = (...pairs) => [
@@ -113,9 +105,7 @@ export default {
     },
   },
   components: {
-    MglMap,
-    MglFullscreenControl,
-    MglScaleControl,
+    Mapbox,
   },
   data() {
     return {
@@ -137,8 +127,7 @@ export default {
     applyActivities(next, sourceID) {
       this.map?.getSource(sourceID).setData(makeGeoJsonData(next));
     },
-    mapLoaded({ map, component: { mapbox } }) {
-      this.mapbox = mapbox;
+    mapLoaded(map) {
       sources.forEach((id) => map.addSource(id, makeGeoJson()));
       Object.entries(layers).forEach(([id, layer]) => map.addLayer(buildLineLayer(id, layer)));
       this.map = map;
@@ -170,7 +159,7 @@ export default {
   head: {
     link: [
       {
-        href: 'https://api.tiles.mapbox.com/mapbox-gl-js/v0.53.0/mapbox-gl.css',
+        href: 'https://api.mapbox.com/mapbox-gl-js/v1.11.0/mapbox-gl.css',
         rel: 'stylesheet',
       },
     ],
@@ -179,6 +168,10 @@ export default {
 </script>
 
 <style>
+#map {
+  flex: 1;
+}
+
 .mapboxgl-canvas {
   cursor:pointer;
 }
