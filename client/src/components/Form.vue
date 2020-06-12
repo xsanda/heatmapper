@@ -51,6 +51,33 @@
 <script>
 import activityTypes from '../activityTypes';
 
+const countActivities = (n) => {
+  switch (n) {
+    case 0: return 'no activities';
+    case 1: return '1 activity';
+    default: return `${n} activities`;
+  }
+};
+const findingString = ({ started = false, finished = false, length = 0 } = {}) => {
+  if (finished) return `found ${countActivities(length)}`;
+  if (started && length) return `found ${countActivities(length)} so far`;
+  if (started) return 'finding activities';
+  return '';
+};
+const filteringString = ({ started = false, finished = false, length = 0 } = {}) => {
+  if (finished) return `filtered to ${countActivities(length)}`;
+  if (started) return 'Filtering activities';
+  return '';
+};
+const mapString = ({ started = false, finished = false } = {}) => {
+  if (finished) return 'loaded all maps';
+  if (started) return 'loading maps';
+  return '';
+};
+
+const nonEmpties = (...args) => args.filter(Boolean);
+const capitalise = (string) => string.slice(0, 1).toUpperCase() + string.slice(1);
+
 export default {
   name: 'Form',
   data() {
@@ -66,33 +93,6 @@ export default {
   },
   computed: {
     statusMessage() {
-      const countActivities = (n) => {
-        switch (n) {
-          case 0: return 'no activities';
-          case 1: return '1 activity';
-          default: return `${n} activities`;
-        }
-      };
-      const findingString = ({ started = false, finished = false, length = 0 } = {}) => {
-        if (finished) return `found ${countActivities(length)}`;
-        if (started && length) return `found ${countActivities(length)} so far`;
-        if (started) return 'finding activities';
-        return '';
-      };
-      const filteringString = ({ started = false, finished = false, length = 0 } = {}) => {
-        if (finished) return `filtered to ${countActivities(length)}`;
-        if (started) return 'Filtering activities';
-        return '';
-      };
-      const mapString = ({ started = false, finished = false } = {}) => {
-        if (finished) return 'loaded all maps';
-        if (started) return 'loading maps';
-        return '';
-      };
-
-      const nonEmpties = (...args) => args.filter(Boolean);
-      const capitalise = (string) => string.slice(0, 1).toUpperCase() + string.slice(1);
-
       const statsMessage = () => {
         const { finding = {}, filtering = {}, maps = {} } = this.stats;
         return capitalise(nonEmpties(findingString(finding), filteringString(filtering), mapString(maps)).join(', '));
