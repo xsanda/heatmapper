@@ -1,6 +1,7 @@
 import bodyParser from 'body-parser';
 import express from 'express';
 import expressWs from 'express-ws';
+import moment from 'moment/min/moment-with-locales';
 import { getStravaActivities, getStravaActivityPages } from './strava.js';
 
 const app = express();
@@ -27,20 +28,25 @@ function* chunkArray(array, n = 10) {
   }
 }
 
+function convertActivity({
+  id, name, start_date_local: date, map: { summary_polyline: map }, type,
+}, locales = ['en']) {
+  return {
+    id, name, date, map, type, dateString: moment(date).locale(locales).format('ll'),
+  };
+}
+
 app.use(corsConfig);
 
 let cachedActivities = [];
 
 router.get('/activities', async (req, res) => {
+  const locales = req.acceptsLanguages();
   if (cachedActivities.length === 0) {
     const activities = [];
     // eslint-disable-next-line no-restricted-syntax
-    for await (const {
-      id, name, start_date_local: date, map: { summary_polyline: map }, type,
-    } of getStravaActivities()) {
-      activities.push({
-        id, name, date, map, type,
-      });
+    for await (const activity of getStravaActivities()) {
+      activities.push(convertActivity(activity, locales));
     }
     cachedActivities = activities;
   }
@@ -52,6 +58,8 @@ router.get('/activities', async (req, res) => {
 });
 
 router.ws('/activities', async (ws, req) => {
+  const locales = req.acceptsLanguages();
+
   let live = true;
   const stats = {
     type: 'stats',
@@ -76,11 +84,7 @@ router.ws('/activities', async (ws, req) => {
       stats.finding.length = activities.length + page.length;
       sendStats();
 
-      activities.push(...page.map(({
-        id, name, start_date_local: date, map: { summary_polyline: map }, type,
-      }) => ({
-        id, name, date, map, type,
-      })));
+      activities.push(...page.map((activity) => convertActivity(activity, locales)));
     }
     cachedActivities = activities;
   } else {
