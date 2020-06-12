@@ -98,11 +98,11 @@ export default {
     activities: { type: Array, required: true },
     center: { type: Object, default: () => [0, 0] },
     zoom: { type: Number, default: 0 },
-    selected: { type: Number, default: undefined },
+    selected: { type: Array, default: () => [] },
   },
   computed: {
     selectedActivities() {
-      return this.activities.filter((activity) => activity.id === this.selected);
+      return this.activities.filter((activity) => this.selected.includes(activity.id));
     },
   },
   components: {
@@ -133,7 +133,7 @@ export default {
     },
   },
   methods: {
-    flyTo(activities) {
+    flyTo(activities, zoom = false) {
       const { map } = this;
       if (!map || activities.length === 0) return;
       const coordinates = activities.flatMap(({ map: line }) => (
@@ -143,20 +143,23 @@ export default {
         acc.extend(coord)
       ), new LngLatBounds(coordinates[0], coordinates[0]));
       const padding = 20;
-      const canvas = map.getCanvas();
-      const w = canvas.width;
-      const h = canvas.height;
-      const screenNorthEast = map.unproject([w - padding, padding]);
-      const screenSouthWest = map.unproject([padding, h - padding]);
+      const { width, height } = map.getCanvas().getBoundingClientRect();
+      const screenNorthEast = map.unproject([width - padding, padding]);
+      const screenSouthWest = map.unproject([padding, height - padding]);
       const screenBounds = new LngLatBounds(screenSouthWest, screenNorthEast);
-      if (!screenBounds.contains(bounds.getSouthWest())
+      if (zoom
+        || !screenBounds.contains(bounds.getSouthWest())
         || !screenBounds.contains(bounds.getNorthEast())) {
+        const maxZoom = zoom ? 30 : map.getZoom();
         map.fitBounds(bounds, {
           padding,
           linear: true,
-          maxZoom: map.getZoom(),
+          maxZoom,
         });
       }
+    },
+    zoomToSelection() {
+      this.flyTo(this.selectedActivities, true);
     },
     applyActivities(next, sourceID) {
       this.map?.getSource(sourceID).setData(makeGeoJsonData(next));
@@ -188,8 +191,9 @@ export default {
       } else this.select(null);
     },
     select(id) {
-      this.localSelected = id;
-      this.$emit('update:selected', id);
+      const selected = [id];
+      this.localSelected = selected;
+      this.$emit('update:selected', selected);
     },
     zoomend(map) {
       this.$emit('update:zoom', map.getZoom());

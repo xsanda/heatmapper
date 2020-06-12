@@ -6,6 +6,7 @@
     <Sidebar
       :activities="activities"
       :selected.sync="selected"
+      @zoomToSelected="zoomToSelected"
       @addActivities="addActivities"
       @addActivityMaps="addActivityMaps"
     />
@@ -14,6 +15,7 @@
       :zoom.sync="zoom"
       :activities="activities"
       :selected.sync="selected"
+      ref="map"
     />
   </div>
 </template>
@@ -32,7 +34,7 @@ export default {
       location: { lat: 51.45, lng: -2.6 },
       zoom: 10,
       activities: [],
-      selected: undefined,
+      selected: [],
     };
   },
   methods: {
@@ -44,6 +46,10 @@ export default {
         const i = this.activities.findIndex(({ id }) => id.toString() === activity);
         this.$set(this.activities, i, { ...this.activities[i], map });
       });
+    },
+    zoomToSelected(selection) {
+      this.selected = selection;
+      this.$refs.map.zoomToSelection();
     },
   },
 };

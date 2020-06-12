@@ -36,6 +36,13 @@ function convertActivity({
   };
 }
 
+function filterActivities(activities, type = undefined) {
+  return activities.filter((activity) => (
+    activity.map
+    && (!type || type.split(',').includes(activity.type))
+  ));
+}
+
 app.use(corsConfig);
 
 let cachedActivities = [];
@@ -50,10 +57,7 @@ router.get('/activities', async (req, res) => {
     }
     cachedActivities = activities;
   }
-  let filteredActivities = cachedActivities;
-  if (req.query.type) {
-    filteredActivities = filteredActivities.filter((activity) => req.query.type.split(',').includes(activity.type));
-  }
+  const filteredActivities = filterActivities(cachedActivities, req.query.type);
   res.send(filteredActivities);
 });
 
@@ -97,10 +101,7 @@ router.ws('/activities', async (ws, req) => {
   stats.filtering.started = true;
   sendStats();
 
-  let filteredActivities = cachedActivities;
-  if (req.query.type) {
-    filteredActivities = filteredActivities.filter((activity) => req.query.type.split(',').includes(activity.type));
-  }
+  const filteredActivities = filterActivities(cachedActivities, req.query.type);
   stats.filtering.finished = true;
   stats.filtering.length = filteredActivities.length;
   sendStats();

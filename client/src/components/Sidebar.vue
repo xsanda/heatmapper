@@ -8,15 +8,16 @@
       <li
         v-for="activity of activities"
         :key="activity.id"
-        :class="[selected === activity.id && 'selected']"
-        @click="select(activity.id)"
-        @dblclick="forceSelect(activity.id)"
+        :class="[selected.includes(activity.id) && 'selected']"
+        @click="select(activity.id, $event)"
+        @dblclick="forceSelect(activity.id, $event)"
       >
         {{ activity.name }}
         <span class="date">
           (<a
             :href="'https://www.strava.com/activities/'+activity.id"
             target="_blank"
+            @click="$event.stopPropagation()"
           >{{ activity.dateString }}</a>)
         </span>
       </li>
@@ -27,6 +28,26 @@
 <script>
 import Form from './Form.vue';
 
+function getRange(activities, from, to) {
+  const selected = [];
+  if (from === undefined) return [];
+  if (to === undefined) return [from];
+  if (from === to) return [from];
+  let inRange = false;
+  // eslint-disable-next-line no-restricted-syntax
+  for (const activity of activities) {
+    const found = (activity.id === from || activity.id === to);
+    if (inRange || found) selected.push(activity.id);
+    if (found && inRange) return selected;
+    if (found) inRange = !inRange;
+  }
+  return [from, to];
+}
+
+function cancelTextSelection() {
+  window.getSelection?.().removeAllRanges();
+}
+
 export default {
   name: 'Sidebar',
   components: { Form },
@@ -35,21 +56,26 @@ export default {
   },
   props: {
     activities: { type: Array, default: () => [] },
-    selected: { type: Number, default: undefined },
+    selected: { type: Array, default: () => [] },
   },
   methods: {
-    select(id) {
-      this.localSelected = id;
-      this.$emit('update:selected', id);
+    getSelection(id, e) {
+      if (e.metaKey || e.ctrlKey) return [...this.selected, id];
+      if (e.shiftKey) return getRange(this.activities, this.selected[0], id);
+      return [id];
     },
-    forceSelect(id) {
-      window.getSelection?.().removeAllRanges();
-      this.localSelected = id;
-      this.$emit('update:selected', null);
-      this.$nextTick(() => {
-        this.$emit('update:selected', id);
-      });
-      return false;
+    select(id, e) {
+      if (e.detail > 1) return;
+      if (e.shiftKey) cancelTextSelection();
+      const newSelected = this.getSelection(id, e);
+      this.localSelected = newSelected;
+      this.$emit('update:selected', newSelected);
+    },
+    forceSelect(id, e) {
+      cancelTextSelection();
+      const newSelected = this.getSelection(id, e);
+      this.localSelected = newSelected;
+      this.$emit('zoomToSelected', newSelected);
     },
   },
   updated() {
