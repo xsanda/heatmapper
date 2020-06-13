@@ -28,11 +28,42 @@ function* chunkArray(array, n = 10) {
   }
 }
 
+const formatDateWithLineBreak = (() => {
+  function splitDateFormat(format) {
+    // break at the last word boundary after year before day/month
+    const yearFirstRegex = /^([^DMY]*Y+(?:[^DMY]*[^DMY ])?(?:\b|(?= ))) ?([^MD]*[MD]+.*)$/;
+
+    // break at the first word boundary after day/month before year
+    const yearLastRegex = /^([^Y]*[MD](?:[^Y]*?[^Y ])??\b[.,]?) ?((?![,.]).*?Y+[^DMY]*)$/;
+    const matches = yearFirstRegex.exec(format) || yearLastRegex.exec(format);
+    if (matches) return matches.slice(1);
+    return [format];
+  }
+
+  const memo = {};
+  function memoisedSplitDateFormat(locales) {
+    const format = moment.localeData(locales).longDateFormat('ll');
+    const cachedSplitFormat = memo[format];
+    if (cachedSplitFormat) return cachedSplitFormat;
+
+    const splitFormat = splitDateFormat(format);
+    memo[format] = splitFormat;
+    return splitFormat;
+  }
+
+  return (date, locales) => {
+    const dateMoment = moment(date).locale(locales);
+    const format = memoisedSplitDateFormat(locales);
+    return format.map((line) => dateMoment.format(line));
+  };
+})();
+
+
 function convertActivity({
   id, name, start_date_local: date, map: { summary_polyline: map }, type,
 }, locales = ['en']) {
   return {
-    id, name, date, map, type, dateString: moment(date).locale(locales).format('ll'),
+    id, name, date, map, type, dateString: formatDateWithLineBreak(date, locales),
   };
 }
 

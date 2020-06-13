@@ -12,14 +12,22 @@
         @click="select(activity.id, $event)"
         @dblclick="forceSelect(activity.id, $event)"
       >
-        {{ activity.name }}
-        <span class="date">
-          (<a
-            :href="'https://www.strava.com/activities/'+activity.id"
-            target="_blank"
-            @click="$event.stopPropagation()"
-          >{{ activity.dateString }}</a>)
-        </span>
+        <div class="activity-name">
+          {{ activity.name }}
+        </div>
+        <div class="date">
+          {{ activity.dateString.join('\n') }}
+        </div>
+        <a
+          :href="'https://www.strava.com/activities/'+activity.id"
+          target="_blank"
+          @click="$event.stopPropagation()"
+          class="strava-link"
+        ><img
+          src="@/assets/strava_symbol_gray.png"
+        ><img
+          src="@/assets/strava_symbol_orange.png"
+        ></a>
       </li>
     </ul>
   </div>
@@ -109,6 +117,8 @@ export default {
       list-style: none;
       padding: 2px 8px;
       font-size: 14px;
+      display: flex;
+      align-items: center;
 
       &:hover {
         background: #eee;
@@ -118,8 +128,31 @@ export default {
         background: #ccc;
       }
 
+      .activity-name {
+        flex: 1;
+      }
+
+      .strava-link {
+        $size: 1.5em;
+        height: $size;
+        width: $size;
+        display: inline-block;
+        overflow: hidden;
+
+        > img {
+          width: 100%;
+        }
+
+        &:hover > img:first-child {
+          display: none;
+        }
+      }
+
       .date {
         display: inline-block;
+        white-space: pre-line;
+        font-size: 0.75em;
+        text-align: right;
       }
     }
   }
