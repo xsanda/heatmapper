@@ -15,7 +15,8 @@
     "mapbox-gl": "^1.11.0",
     "mapbox-gl-vue": "^2.0.4",
     "vue": "^2.6.11",
-    "vue-head": "^2.2.0"
+    "vue-head": "^2.2.0",
+    "vue-simple-spinner": "^1.2.10"
   },
   "devDependencies": {
     "@vue/cli-plugin-babel": "~4.4.0",

@@ -15,6 +15,15 @@
         <div class="activity-name">
           {{ activity.name }}
         </div>
+        <div
+          v-if="!activity.map"
+          class="spinner"
+        >
+          <Spinner
+            size="tiny"
+            line-fg-color="#888"
+          />
+        </div>
         <div class="date">
           {{ activity.dateString.join('\n') }}
         </div>
@@ -34,6 +43,8 @@
 </template>
 
 <script>
+import Spinner from 'vue-simple-spinner';
+
 import Form from './Form.vue';
 
 function getRange(activities, from, to) {
@@ -58,7 +69,7 @@ function cancelTextSelection() {
 
 export default {
   name: 'Sidebar',
-  components: { Form },
+  components: { Form, Spinner },
   data() {
     return { localSelected: null };
   },
@@ -130,6 +141,10 @@ export default {
 
       .activity-name {
         flex: 1;
+      }
+
+      .spinner {
+        padding:0.5em;
       }
 
       .strava-link {
