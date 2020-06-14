@@ -6,6 +6,16 @@
  * @property {IteratorResult<T>} next
  * @property {Promise<RecursiveIterator<T>>=} nextIterator
  */
+/**
+ * @param {number} delay
+ * @returns {Promise<void>}
+ */
+export const sleep = (delay) => new Promise((resolve) => setTimeout(resolve, delay));
+
+/**
+ * @returns {Promise<void>}
+ */
+export const tick = () => sleep(0);
 
 /**
  *
@@ -23,6 +33,7 @@ const eagerIterator = (asyncIterable) => {
    */
   const eagerIteratorStep = async (asyncIterator) => {
     if (returned) return { next: { done: true, value: undefined } };
+    await tick();
     const next = await asyncIterator.next();
     if (next.done) return { next };
     return { next, nextIterator: eagerIteratorStep(asyncIterator) };
