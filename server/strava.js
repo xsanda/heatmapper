@@ -1,5 +1,7 @@
 #!/usr/bin/env node
 
+// @ts-check
+
 import { createServer } from 'http';
 import fetch from 'node-fetch';
 import { readFileSync, writeFileSync } from 'fs';
@@ -21,13 +23,16 @@ const cache = { stravaRefreshToken };
 
 /**
  * Updates cached strava authentication tokens if necessary
+ *
+ * @param {{ code: string | string[]; grant_type: string; } =} tokens
+ * @returns {Promise<string>}
  */
 async function getStravaToken(tokens = undefined) {
   if (!tokens && cache.stravaAccessToken) return cache.stravaAccessToken;
 
   // read cache from disk
   try {
-    const jsonStr = readFileSync(AUTH_CACHE_FILE);
+    const jsonStr = readFileSync(AUTH_CACHE_FILE, 'utf-8');
     Object.assign(cache, JSON.parse(jsonStr));
   } catch (error) {
     console.log(error);
@@ -54,6 +59,10 @@ async function getStravaToken(tokens = undefined) {
   return cache.stravaAccessToken;
 }
 
+/**
+ * @param {string} endpoint
+ * @param {object} query
+ */
 async function rawStravaAPI(endpoint, query = {}) {
   const API_BASE = 'https://www.strava.com/api/v3';
   const queryString = Object.entries(query)
@@ -67,11 +76,14 @@ async function rawStravaAPI(endpoint, query = {}) {
   return data;
 }
 
+/**
+ * @returns {Promise<void>}
+ */
 async function getAccessTokenFromBrowser() {
   const [port] = await fp(10000);
   return new Promise((resolve) => {
     const server = createServer(async (request, response) => {
-      const requestUrl = parse(request.url, { parseQueryString: true });
+      const requestUrl = parse(request.url, true);
       if (requestUrl.pathname !== '/strava-token') {
         console.debug(`Ignoring request to ${requestUrl.pathname}`);
         return;
@@ -79,7 +91,7 @@ async function getAccessTokenFromBrowser() {
       response.writeHead(200, { 'Content-Type': 'text/plain' });
       response.write('Complete, you may now close this window');
       response.end();
-      await server.close();
+      server.close();
       await getStravaToken({
         code: requestUrl.query.code,
         grant_type: 'authorization_code',
@@ -94,6 +106,11 @@ async function getAccessTokenFromBrowser() {
   });
 }
 
+/**
+ * @param {string} endpoint
+ * @param {object} query
+ * @returns {Promise<object>}
+ */
 async function stravaAPI(endpoint, query = {}) {
   let data = await rawStravaAPI(endpoint, query);
   if (data.status === 401) {
@@ -114,6 +131,7 @@ async function getPage(i) {
 
 /**
  * Fetches your data from the Strava API
+ * @returns {AsyncGenerator<unknown[]>}
  */
 export async function* getStravaActivityPages() {
   let page;
@@ -130,6 +148,7 @@ export async function* getStravaActivityPages() {
 
 /**
  * Fetches your data from the Strava API
+ * @returns {AsyncGenerator<unknown>}
  */
 // eslint-disable-next-line import/prefer-default-export
 export async function* getStravaActivities() {

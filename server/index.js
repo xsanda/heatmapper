@@ -1,8 +1,12 @@
+// @ts-check
+
 import bodyParser from 'body-parser';
 import express from 'express';
 import expressWs from 'express-ws';
-import moment from 'moment/min/moment-with-locales';
+import moment from 'moment';
+import 'moment/min/locales';
 import { getStravaActivities, getStravaActivityPages } from './strava.js';
+import eagerIterator from './eager-queue.js';
 
 const app = express();
 expressWs(app);
@@ -22,56 +26,103 @@ function corsConfig(req, res, next) {
   next();
 }
 
+/**
+ * @template T
+ * @param {T[]} array
+ * @param {number} n
+ * @returns {Generator<T[]>}
+ */
 function* chunkArray(array, n = 10) {
   for (let i = 0; i < array.length; i += n) {
     yield array.slice(i, i + n);
   }
 }
 
-const formatDateWithLineBreak = (() => {
-  function splitDateFormat(format) {
-    // break at the last word boundary after year before day/month
-    const yearFirstRegex = /^([^DMY]*Y+(?:[^DMY]*[^DMY ])?(?:\b|(?= ))) ?([^MD]*[MD]+.*)$/;
-
-    // break at the first word boundary after day/month before year
-    const yearLastRegex = /^([^Y]*[MD](?:[^Y]*?[^Y ])??\b[.,]?) ?((?![,.]).*?Y+[^DMY]*)$/;
-    const matches = yearFirstRegex.exec(format) || yearLastRegex.exec(format);
-    if (matches) return matches.slice(1);
-    return [format];
-  }
-
+/**
+ * Memoise a function, so previously passed values are stored to avoid recomputation.
+ *
+ * Note that this will lead to a memory leak if too many inputs are given: they are never cleared.
+ * The function must take a single string.
+ *
+ * @template T
+ * @param {(arg: string) => T} fn The function to memoise.
+ * @returns {(arg: string) => T} The memoised function.
+ */
+const memoise = (fn) => {
   const memo = {};
-  function memoisedSplitDateFormat(locales) {
-    const format = moment.localeData(locales).longDateFormat('ll');
-    const cachedSplitFormat = memo[format];
-    if (cachedSplitFormat) return cachedSplitFormat;
 
-    const splitFormat = splitDateFormat(format);
-    memo[format] = splitFormat;
-    return splitFormat;
-  }
+  return (arg) => {
+    const cached = memo[arg];
+    if (cached) return cached;
 
-  return (date, locales) => {
-    const dateMoment = moment(date).locale(locales);
-    const format = memoisedSplitDateFormat(locales);
-    return format.map((line) => dateMoment.format(line));
+    const computed = fn(arg);
+    memo[arg] = computed;
+    return computed;
   };
-})();
+};
 
+const splitDateFormat = memoise((format) => {
+  // break at the last word boundary after year before day/month
+  const yearFirstRegex = /^([^DMY]*Y+(?:[^DMY]*[^DMY ])?(?:\b|(?= ))) ?([^MD]*[MD]+.*)$/;
 
-function convertActivity({
-  id, name, start_date_local: date, map: { summary_polyline: map }, type,
-}, locales = ['en']) {
+  // break at the first word boundary after day/month before year
+  const yearLastRegex = /^([^Y]*[MD](?:[^Y]*?[^Y ])??\b[.,]?) ?((?![,.]).*?Y+[^DMY]*)$/;
+  const matches = yearFirstRegex.exec(format) || yearLastRegex.exec(format);
+  if (matches) return matches.slice(1);
+  return [format];
+});
+
+/**
+ * @param {moment.MomentInput} date
+ * @param {string | string[]} locales
+ * @returns {string[]}
+ */
+const formatDateWithLineBreak = (date, locales) => {
+  const dateMoment = moment(date).locale(locales);
+  const format = moment.localeData(locales).longDateFormat('ll');
+  const splitFormat = splitDateFormat(format);
+  return splitFormat.map((line) => dateMoment.format(line));
+};
+
+/**
+ * @typedef {object} Activity
+ * @property {string} id
+ * @property {string} name
+ * @property {moment.MomentInput} date
+ * @property {string} map
+ * @property {string} type
+ * @property {string[]} dateString
+ */
+
+/**
+ *
+ * @param {any} rawActivity
+ * @param {string | string[]} locales
+ * @returns {Activity}
+ */
+function convertActivity(
+  { id, name, start_date_local: date, map: { summary_polyline: map }, type },
+  locales = ['en'],
+) {
   return {
-    id, name, date, map, type, dateString: formatDateWithLineBreak(date, locales),
+    id,
+    name,
+    date,
+    map,
+    type,
+    dateString: formatDateWithLineBreak(date, locales),
   };
 }
 
+/**
+ * @param {Activity[]} activities
+ * @param {string=} type
+ * @return {Activity[]}
+ */
 function filterActivities(activities, type = undefined) {
-  return activities.filter((activity) => (
-    activity.map
-    && (!type || type.split(',').includes(activity.type))
-  ));
+  return activities.filter(
+    (activity) => activity.map && (!type || type.split(',').includes(activity.type)),
+  );
 }
 
 app.use(corsConfig);
@@ -88,7 +139,10 @@ router.get('/activities', async (req, res) => {
     }
     cachedActivities = activities;
   }
-  const filteredActivities = filterActivities(cachedActivities, req.query.type);
+  const filteredActivities = filterActivities(
+    cachedActivities,
+    /** @type {string} */ (req.query.type),
+  );
   res.send(filteredActivities);
 });
 
@@ -104,7 +158,9 @@ router.ws('/activities', async (ws, req) => {
   };
   const sendStats = () => ws.send(JSON.stringify(stats));
 
-  ws.on('close', () => { live = false; });
+  ws.on('close', () => {
+    live = false;
+  });
 
   if (cachedActivities.length === 0) {
     const activities = [];
@@ -113,7 +169,7 @@ router.ws('/activities', async (ws, req) => {
     sendStats();
 
     // eslint-disable-next-line no-restricted-syntax
-    for await (const page of getStravaActivityPages()) {
+    for await (const page of eagerIterator(getStravaActivityPages())) {
       if (!live) return;
 
       stats.finding.length = activities.length + page.length;
@@ -132,11 +188,19 @@ router.ws('/activities', async (ws, req) => {
   stats.filtering.started = true;
   sendStats();
 
-  const filteredActivities = filterActivities(cachedActivities, req.query.type);
+  const filteredActivities = filterActivities(
+    cachedActivities,
+    /** @type {string} */ (req.query.type),
+  );
   stats.filtering.finished = true;
   stats.filtering.length = filteredActivities.length;
   sendStats();
-  ws.send(JSON.stringify({ type: 'activities', activities: filteredActivities.map(({ map, ...activity }) => activity) }));
+  ws.send(
+    JSON.stringify({
+      type: 'activities',
+      activities: filteredActivities.map(({ map, ...activity }) => activity),
+    }),
+  );
 
   stats.maps.started = true;
   sendStats();
