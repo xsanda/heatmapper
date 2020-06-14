@@ -6,7 +6,7 @@ import expressWs from 'express-ws';
 import moment from 'moment';
 import 'moment/min/locales';
 import { getStravaActivities, getStravaActivityPages } from './strava.js';
-import eagerIterator from './eager-queue.js';
+import eagerIterator from './eager-iterator.js';
 
 const app = express();
 expressWs(app);
@@ -60,6 +60,24 @@ const memoise = (fn) => {
     return computed;
   };
 };
+
+/**
+ * @template T
+ * @param {(activities: T) => Promise<void>} fn
+ * @returns {(input: T) => Promise<void>}
+ */
+const inOrder = (fn) => {
+  let lastItem = Promise.resolve();
+  return (input) => {
+    lastItem = lastItem.then(() => fn(input));
+    return lastItem;
+  };
+};
+
+/**
+ * @returns {Promise<void>}
+ */
+const tick = () => new Promise((resolve) => setTimeout(resolve, 0));
 
 const splitDateFormat = memoise((format) => {
   // break at the last word boundary after year before day/month
@@ -156,61 +174,97 @@ router.ws('/activities', async (ws, req) => {
     filtering: { started: false, finished: false, length: 0 },
     maps: { started: false, finished: false },
   };
-  const sendStats = () => ws.send(JSON.stringify(stats));
+  const sendStats = () => {
+    if (live) ws.send(JSON.stringify(stats));
+  };
 
   ws.on('close', () => {
     live = false;
   });
 
-  if (cachedActivities.length === 0) {
-    const activities = [];
+  async function* activitiesIterator() {
+    if (cachedActivities.length === 0) {
+      const activities = [];
 
-    stats.finding.started = true;
-    sendStats();
-
-    // eslint-disable-next-line no-restricted-syntax
-    for await (const page of eagerIterator(getStravaActivityPages())) {
-      if (!live) return;
-
-      stats.finding.length = activities.length + page.length;
+      stats.finding.started = true;
       sendStats();
 
-      activities.push(...page.map((activity) => convertActivity(activity, locales)));
+      // eslint-disable-next-line no-restricted-syntax
+      for await (const page of eagerIterator(getStravaActivityPages())) {
+        if (!live) return;
+
+        stats.finding.length = activities.length + page.length;
+        sendStats();
+
+        const newActivities = page.map((activity) => convertActivity(activity, locales));
+        activities.push(...newActivities);
+        yield newActivities;
+      }
+      cachedActivities = activities;
+    } else {
+      stats.finding.started = true;
+      stats.finding.length = cachedActivities.length;
+      sendStats();
+      yield cachedActivities;
     }
-    cachedActivities = activities;
-  } else {
-    stats.finding.started = true;
-    stats.finding.length = cachedActivities.length;
+    stats.finding.finished = true;
   }
+
+  async function* filteredActivitiesIterator() {
+    // eslint-disable-next-line no-restricted-syntax
+    for await (const activities of activitiesIterator()) {
+      stats.filtering.started = true;
+      const filteredActivities = filterActivities(
+        activities,
+        /** @type {string} */ (req.query.type),
+      );
+      stats.filtering.length += filteredActivities.length;
+      yield filteredActivities;
+    }
+    stats.filtering.finished = true;
+  }
+
+  /**
+   * @type {(input?: Activity[]) => Promise<void>}
+   */
+  const sendMaps = inOrder(async (activities = []) => {
+    // eslint-disable-next-line no-restricted-syntax
+    for (const chunk of chunkArray(activities, 50)) {
+      // eslint-disable-next-line no-await-in-loop
+      await tick();
+      if (!live) return;
+      const maps = Object.fromEntries(chunk.map(({ id, map }) => [id, map]));
+      ws.send(JSON.stringify({ type: 'maps', chunk: maps }));
+    }
+    sendStats();
+  });
+
   if (!live) return;
 
-  stats.finding.finished = true;
-  stats.filtering.started = true;
   sendStats();
 
-  const filteredActivities = filterActivities(
-    cachedActivities,
-    /** @type {string} */ (req.query.type),
-  );
-  stats.filtering.finished = true;
-  stats.filtering.length = filteredActivities.length;
-  sendStats();
-  ws.send(
-    JSON.stringify({
-      type: 'activities',
-      activities: filteredActivities.map(({ map, ...activity }) => activity),
-    }),
-  );
+  // TODO:  stats.filtering.length = filteredActivities.length;
 
-  stats.maps.started = true;
-  sendStats();
+  // sendStats();
 
   // eslint-disable-next-line no-restricted-syntax
-  for (const chunk of chunkArray(filteredActivities, 50)) {
-    const maps = Object.fromEntries(chunk.map(({ id, map }) => [id, map]));
-    ws.send(JSON.stringify({ type: 'maps', chunk: maps }));
+  for await (const filteredActivities of filteredActivitiesIterator()) {
+    if (!live) return;
+    ws.send(
+      JSON.stringify({
+        type: 'activities',
+        activities: filteredActivities.map(({ map, ...activity }) => activity),
+      }),
+    );
+    stats.maps.started = true;
+    sendStats();
+    sendMaps(filteredActivities);
   }
+
+  await sendMaps();
   stats.maps.finished = true;
+
+  if (!live) return;
   sendStats();
   ws.close();
 });
