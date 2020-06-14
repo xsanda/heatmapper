@@ -91,6 +91,7 @@ export default {
     center: { type: Object, default: () => [0, 0] },
     zoom: { type: Number, default: 0 },
     selected: { type: Array, default: () => [] },
+    improvedHillshade: { type: Boolean, default: false },
   },
   computed: {
     selectedActivities() {
@@ -102,8 +103,9 @@ export default {
   },
   data() {
     return {
-      token: 'pk.eyJ1Ijoic3RyYXZhIiwiYSI6IlpoeXU2U0UifQ.c7yhlZevNRFCqHYm6G6Cyg',
-      mapStyle: 'mapbox://styles/strava/ck2gt6oil0c7y1cnvlz1uphnu',
+      token:
+        'pk.eyJ1IjoiY2hhcmRpbmciLCJhIjoiY2tiYWp0cndkMDc0ZjJybXhlcHdoM2Z3biJ9.XUwOLV17ZBXE8dhp198dqg',
+      mapStyle: 'mapbox://styles/charding/ckbfof39h4b2t1ildduhwlm15',
       localSelected: null,
     };
   },
@@ -122,8 +124,19 @@ export default {
         }
       });
     },
+    improvedHillshade(next) {
+      if (this.map) this.setHillshade(next);
+    },
   },
   methods: {
+    setHillshade(improved) {
+      this.map.setLayoutProperty(
+        'improved-hillshading',
+        'visibility',
+        improved ? 'visible' : 'none',
+      );
+      this.map.setLayoutProperty('hillshade-greys', 'visibility', !improved ? 'visible' : 'none');
+    },
     flyTo(activities, zoom = false) {
       const { map } = this;
       if (!map || activities.length === 0) return;
@@ -160,8 +173,11 @@ export default {
     },
     mapLoaded(map) {
       sources.forEach((id) => map.addSource(id, makeGeoJson()));
-      Object.entries(layers).forEach(([id, layer]) => map.addLayer(buildLineLayer(id, layer)));
+      Object.entries(layers).forEach(([id, layer]) =>
+        map.addLayer(buildLineLayer(id, layer), layer.below),
+      );
       this.map = map;
+      this.setHillshade(this.improvedHillshade);
       this.$nextTick(() => {
         this.applyActivities(this.activities, 'lines');
         this.applyActivities(this.selectedActivities, 'selected');

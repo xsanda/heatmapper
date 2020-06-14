@@ -5,6 +5,7 @@
       @clearActivities="$emit('clearActivities')"
       @addActivities="$emit('addActivities', $event)"
       @addActivityMaps="$emit('addActivityMaps', $event)"
+      @toggle:improvedHillshade="$emit('toggle:improvedHillshade')"
     />
     <ul>
       <li
