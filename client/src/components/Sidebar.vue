@@ -1,5 +1,6 @@
 <template>
   <div class="sidebar">
+    <h1>Heatmapper</h1>
     <Form
       @clearActivities="$emit('clearActivities')"
       @addActivities="$emit('addActivities', $event)"
@@ -107,6 +108,11 @@ export default {
   flex: 0 20em;
   display: flex;
   flex-direction: column;
+
+  h1 {
+    padding: 0 1em;
+    text-align: center;
+  }
 
   > ul {
     flex: 1;
