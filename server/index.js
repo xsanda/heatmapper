@@ -5,8 +5,9 @@ import express from 'express';
 import expressWs from 'express-ws';
 import moment from 'moment';
 import 'moment/min/locales';
-import { getStravaActivities, getStravaActivityPages } from './strava.js';
-import eagerIterator from './eager-iterator.js';
+import { getStravaActivities, getStravaActivityPages } from './strava';
+import eagerIterator, { tick } from './eager-iterator';
+import { inOrder, memoise } from './stateful-functions';
 
 const app = express();
 expressWs(app);
@@ -26,6 +27,8 @@ function corsConfig(req, res, next) {
   next();
 }
 
+app.use(corsConfig);
+
 /**
  * @template T
  * @param {T[]} array
@@ -37,47 +40,6 @@ function* chunkArray(array, n = 10) {
     yield array.slice(i, i + n);
   }
 }
-
-/**
- * Memoise a function, so previously passed values are stored to avoid recomputation.
- *
- * Note that this will lead to a memory leak if too many inputs are given: they are never cleared.
- * The function must take a single string.
- *
- * @template T
- * @param {(arg: string) => T} fn The function to memoise.
- * @returns {(arg: string) => T} The memoised function.
- */
-const memoise = (fn) => {
-  const memo = {};
-
-  return (arg) => {
-    const cached = memo[arg];
-    if (cached) return cached;
-
-    const computed = fn(arg);
-    memo[arg] = computed;
-    return computed;
-  };
-};
-
-/**
- * @template T
- * @param {(activities: T) => Promise<void>} fn
- * @returns {(input: T) => Promise<void>}
- */
-const inOrder = (fn) => {
-  let lastItem = Promise.resolve();
-  return (input) => {
-    lastItem = lastItem.then(() => fn(input));
-    return lastItem;
-  };
-};
-
-/**
- * @returns {Promise<void>}
- */
-const tick = () => new Promise((resolve) => setTimeout(resolve, 0));
 
 const splitDateFormat = memoise((format) => {
   // break at the last word boundary after year before day/month
@@ -142,8 +104,6 @@ function filterActivities(activities, type = undefined) {
     (activity) => activity.map && (!type || type.split(',').includes(activity.type)),
   );
 }
-
-app.use(corsConfig);
 
 let cachedActivities = [];
 
