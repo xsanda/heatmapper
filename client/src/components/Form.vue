@@ -211,24 +211,23 @@ export default {
         socket.close();
       }
     },
-    startLoading(socket = undefined) {
+    loadFromCache() {
       const activities = getCachedActivities();
       if (activities) {
         this.stats = { finding: { finished: true, length: activities.length } };
-        const filteredActivities = socket
-          ? activities
-          : activities.filter(({ id }) => getCachedMap(id));
-        this.receiveActivities(filteredActivities, socket);
-      } else if (socket) {
-        clearCachedActivities(this.activities);
-        this.inCache = false;
-        socket.send(
-          JSON.stringify({
-            // load a single range covering all time
-            load: [{}],
-          }),
-        );
+        const filteredActivities = activities.filter(({ id }) => getCachedMap(id));
+        this.receiveActivities(filteredActivities);
       }
+    },
+    startLoading(socket) {
+      clearCachedActivities(this.activities);
+      this.inCache = false;
+      socket.send(
+        JSON.stringify({
+          // load a single range covering all time
+          load: [{}],
+        }),
+      );
     },
     async sockets() {
       this.$emit('clearActivities');
@@ -280,7 +279,7 @@ export default {
   },
   mounted() {
     if (!this.activities || this.activities.length === 0) {
-      this.startLoading();
+      this.loadFromCache();
     }
   },
 };
