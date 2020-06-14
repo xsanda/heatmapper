@@ -10,8 +10,8 @@
     @map-zoomend="zoomend"
     @map-click="click"
     @map-load="mapLoaded"
-    :fullscreen-control="{ show: true, position:'top-right' }"
-    :scale-control="{ show: true, position:'bottom-left' }"
+    :fullscreen-control="{ show: true, position: 'top-right' }"
+    :scale-control="{ show: true, position: 'bottom-left' }"
     :nav-control="{ show: false }"
   />
 </template>
@@ -37,7 +37,6 @@ const makeGeoJsonData = (activities = []) => ({
       id: activity.id,
       geometry: polyline.toGeoJSON(activity.map),
     })),
-
 });
 
 const makeGeoJson = (activities = []) => ({
@@ -57,26 +56,14 @@ const layers = {
   lines: {
     source: 'lines',
     color: '#00F',
-    opacity: fromZoom(
-      [5, 0.5],
-      [10, 0.1],
-      [16, 0.1],
-      [22, 0.2],
-    ),
-    width: fromZoom(
-      [5, 1],
-      [17, 4],
-      [22, 8],
-    ),
+    opacity: fromZoom([5, 0.5], [10, 0.1], [16, 0.1], [22, 0.2]),
+    width: fromZoom([5, 1], [17, 4], [22, 8]),
   },
   selected: {
     source: 'selected',
     color: '#0F0',
     opacity: 1,
-    width: fromZoom(
-      [5, 4],
-      [17, 8],
-    ),
+    width: fromZoom([5, 4], [17, 8]),
   },
 };
 
@@ -110,8 +97,7 @@ export default {
   },
   data() {
     return {
-      token:
-        'pk.eyJ1Ijoic3RyYXZhIiwiYSI6IlpoeXU2U0UifQ.c7yhlZevNRFCqHYm6G6Cyg',
+      token: 'pk.eyJ1Ijoic3RyYXZhIiwiYSI6IlpoeXU2U0UifQ.c7yhlZevNRFCqHYm6G6Cyg',
       mapStyle: 'mapbox://styles/strava/ck2gt6oil0c7y1cnvlz1uphnu',
       localSelected: null,
     };
@@ -136,20 +122,23 @@ export default {
     flyTo(activities, zoom = false) {
       const { map } = this;
       if (!map || activities.length === 0) return;
-      const coordinates = activities.flatMap(({ map: line }) => (
-        polyline.decode(line).map((pair) => pair.reverse())
-      ));
-      const bounds = coordinates.reduce((acc, coord) => (
-        acc.extend(coord)
-      ), new LngLatBounds(coordinates[0], coordinates[0]));
+      const coordinates = activities.flatMap(({ map: line }) =>
+        polyline.decode(line).map((pair) => pair.reverse()),
+      );
+      const bounds = coordinates.reduce(
+        (acc, coord) => acc.extend(coord),
+        new LngLatBounds(coordinates[0], coordinates[0]),
+      );
       const padding = 20;
       const { width, height } = map.getCanvas().getBoundingClientRect();
       const screenNorthEast = map.unproject([width - padding, padding]);
       const screenSouthWest = map.unproject([padding, height - padding]);
       const screenBounds = new LngLatBounds(screenSouthWest, screenNorthEast);
-      if (zoom
-        || !screenBounds.contains(bounds.getSouthWest())
-        || !screenBounds.contains(bounds.getNorthEast())) {
+      if (
+        zoom ||
+        !screenBounds.contains(bounds.getSouthWest()) ||
+        !screenBounds.contains(bounds.getNorthEast())
+      ) {
         const maxZoom = zoom ? 30 : map.getZoom();
         map.fitBounds(bounds, {
           padding,
@@ -180,10 +169,9 @@ export default {
       ];
       let neighbours = [];
       for (let i = 0; i < 5; i += 1) {
-        neighbours = map.queryRenderedFeatures(
-          surround(e.point, i),
-          { layers: ['lines', 'selected'] },
-        );
+        neighbours = map.queryRenderedFeatures(surround(e.point, i), {
+          layers: ['lines', 'selected'],
+        });
         if (neighbours.length > 0) break;
       }
       if (neighbours.length > 0) {
@@ -219,6 +207,6 @@ export default {
 }
 
 .mapboxgl-canvas {
-  cursor:pointer;
+  cursor: pointer;
 }
 </style>

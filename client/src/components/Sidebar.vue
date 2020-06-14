@@ -1,6 +1,7 @@
 <template>
   <div class="sidebar">
     <Form
+      @clearActivities="$emit('clearActivities')"
       @addActivities="$emit('addActivities', $event)"
       @addActivityMaps="$emit('addActivityMaps', $event)"
     />
@@ -15,28 +16,19 @@
         <div class="activity-name">
           {{ activity.name }}
         </div>
-        <div
-          v-if="!activity.map"
-          class="spinner"
-        >
-          <Spinner
-            size="tiny"
-            line-fg-color="#888"
-          />
+        <div v-if="!activity.map" class="spinner">
+          <Spinner size="tiny" line-fg-color="#888" />
         </div>
         <div class="date">
           {{ activity.dateString.join('\n') }}
         </div>
         <a
-          :href="'https://www.strava.com/activities/'+activity.id"
+          :href="'https://www.strava.com/activities/' + activity.id"
           target="_blank"
           @click="$event.stopPropagation()"
           class="strava-link"
-        ><img
-          src="@/assets/strava_symbol_gray.png"
-        ><img
-          src="@/assets/strava_symbol_orange.png"
-        ></a>
+          ><img src="@/assets/strava_symbol_gray.png"/><img src="@/assets/strava_symbol_orange.png"
+        /></a>
       </li>
     </ul>
   </div>
@@ -55,7 +47,7 @@ function getRange(activities, from, to) {
   let inRange = false;
   // eslint-disable-next-line no-restricted-syntax
   for (const activity of activities) {
-    const found = (activity.id === from || activity.id === to);
+    const found = activity.id === from || activity.id === to;
     if (inRange || found) selected.push(activity.id);
     if (found && inRange) return selected;
     if (found) inRange = !inRange;
@@ -106,7 +98,6 @@ export default {
       }
     });
   },
-
 };
 </script>
 
@@ -118,7 +109,7 @@ export default {
   flex-direction: column;
 
   > ul {
-    flex:1;
+    flex: 1;
     overflow: auto;
     margin: 0;
     padding: 1em 0;
@@ -144,7 +135,7 @@ export default {
       }
 
       .spinner {
-        padding:0.5em;
+        padding: 0.5em;
       }
 
       .strava-link {

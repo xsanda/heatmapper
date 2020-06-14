@@ -1,12 +1,10 @@
 <template>
-  <div
-    id="app"
-    hidden
-  >
+  <div id="app" hidden>
     <Sidebar
       :activities="activities"
       :selected.sync="selected"
       @zoomToSelected="zoomToSelected"
+      @clearActivities="clearActivities"
       @addActivities="addActivities"
       @addActivityMaps="addActivityMaps"
     />
@@ -38,8 +36,11 @@ export default {
     };
   },
   methods: {
+    clearActivities() {
+      this.activities = [];
+    },
     addActivities(activities) {
-      this.activities = activities;
+      this.activities.push(...activities);
     },
     addActivityMaps(maps) {
       Object.entries(maps).forEach(([activity, map]) => {
@@ -56,7 +57,8 @@ export default {
 </script>
 
 <style>
-html,body {
+html,
+body {
   height: 100%;
   overflow: hidden;
   margin: 0;
