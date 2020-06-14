@@ -66,6 +66,7 @@ async function getStravaToken(tokens = undefined) {
 async function rawStravaAPI(endpoint, query = {}) {
   const API_BASE = 'https://www.strava.com/api/v3';
   const queryString = Object.entries(query)
+    .filter(([, value]) => value)
     .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`)
     .join('&');
   const API = `${API_BASE}${endpoint}?${queryString}`;
@@ -122,23 +123,33 @@ async function stravaAPI(endpoint, query = {}) {
   return json;
 }
 
-async function getPage(i) {
+/**
+ * @param {number} i
+ * @param {number} start
+ * @param {number} end
+ * @returns {Promise<object>}
+ */
+async function getPage(i, start = undefined, end = undefined) {
   return stravaAPI('/athlete/activities', {
     per_page: 200,
     page: i,
+    before: end,
+    after: start,
   });
 }
 
 /**
  * Fetches your data from the Strava API
+ * @param {number} start
+ * @param {number} end
  * @returns {AsyncGenerator<unknown[]>}
  */
-export async function* getStravaActivityPages() {
+export async function* getStravaActivityPages(start = undefined, end = undefined) {
   let page;
   let i = 1;
   while (true) {
     // eslint-disable-next-line no-await-in-loop
-    page = await getPage(i);
+    page = await getPage(i, start, end);
     console.log('page', i, 'has length', page.length);
     if (page.length === 0) break;
     yield page;
@@ -148,12 +159,14 @@ export async function* getStravaActivityPages() {
 
 /**
  * Fetches your data from the Strava API
+ * @param {number} start
+ * @param {number} end
  * @returns {AsyncGenerator<unknown>}
  */
 // eslint-disable-next-line import/prefer-default-export
-export async function* getStravaActivities() {
+export async function* getStravaActivities(start = undefined, end = undefined) {
   // eslint-disable-next-line no-restricted-syntax
-  for await (const page of getStravaActivityPages()) {
+  for await (const page of getStravaActivityPages(start, end)) {
     yield* page;
   }
 }
