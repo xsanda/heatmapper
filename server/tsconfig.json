@@ -1,0 +1,10 @@
+{
+  "compilerOptions": {
+    "lib": ["es2020"],
+    "types": ["node"],
+    "noEmit": true,
+    "allowJs": true,
+    "allowSyntheticDefaultImports": true,
+    "downlevelIteration": true
+  }
+}
