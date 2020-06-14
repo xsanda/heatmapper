@@ -26,6 +26,9 @@
       <button @click="clearCache">
         Clear cache
       </button>
+      <button @click="$emit('toggle:improvedHillshade')">
+        Toggle hillshade
+      </button>
     </div>
     <p :class="[error && 'error']">
       {{ statusMessage }}

@@ -7,12 +7,14 @@
       @clearActivities="clearActivities"
       @addActivities="addActivities"
       @addActivityMaps="addActivityMaps"
+      @toggle:improvedHillshade="improvedHillshade = !improvedHillshade"
     />
     <Map
       :center.sync="location"
       :zoom.sync="zoom"
       :activities="activities"
       :selected.sync="selected"
+      :improved-hillshade="improvedHillshade"
       ref="map"
     />
   </div>
@@ -33,6 +35,7 @@ export default {
       zoom: 10,
       activities: [],
       selected: [],
+      improvedHillshade: false,
     };
   },
   methods: {
