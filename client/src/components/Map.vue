@@ -46,17 +46,22 @@ const makeGeoJson = (activities = []) => ({
 
 const sources = ['lines', 'selected'];
 const layers = {
-  blur: {
-    source: 'lines',
-    color: '#00F',
-    opacity: 0.01,
-    width: 10,
-    blur: 10,
-  },
   lines: {
     source: 'lines',
     color: '#00F',
-    opacity: fromZoom([5, 0.5], [10, 0.1], [16, 0.1], [22, 0.2]),
+    opacity: fromZoom([5, 0.5], [10, 0.2]),
+    width: fromZoom([5, 1], [17, 4], [22, 8]),
+  },
+  medium: {
+    source: 'lines',
+    color: '#F00',
+    opacity: fromZoom([5, 0.1], [10, 0.04]),
+    width: fromZoom([5, 1], [17, 4], [22, 8]),
+  },
+  hot: {
+    source: 'lines',
+    color: '#FF0',
+    opacity: fromZoom([5, 0.05], [10, 0.02]),
     width: fromZoom([5, 1], [17, 4], [22, 8]),
   },
   selected: {
