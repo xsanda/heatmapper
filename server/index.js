@@ -66,7 +66,7 @@ const formatDateWithLineBreak = (date, locales) => {
 
 /**
  * @typedef {object} Activity
- * @property {string} id
+ * @property {number} id
  * @property {string} name
  * @property {moment.MomentInput} date
  * @property {string} map
@@ -94,45 +94,19 @@ function convertActivity(
   };
 }
 
-/**
- * @param {Activity[]} activities
- * @param {string=} type
- * @return {Activity[]}
- */
-function filterActivities(activities, type = undefined) {
-  return activities.filter(
-    (activity) => activity.map && (!type || type.split(',').includes(activity.type)),
-  );
-}
-
+/** @type {Activity[]} */
 let cachedActivities = [];
 
-router.get('/activities', async (req, res) => {
-  const locales = req.acceptsLanguages();
-  if (cachedActivities.length === 0) {
-    const activities = [];
-    // eslint-disable-next-line no-restricted-syntax
-    for await (const activity of getStravaActivities()) {
-      activities.push(convertActivity(activity, locales));
-    }
-    cachedActivities = activities;
-  }
-  const filteredActivities = filterActivities(
-    cachedActivities,
-    /** @type {string} */ (req.query.type),
-  );
-  res.send(filteredActivities);
-});
-
 router.ws('/activities', async (ws, req) => {
+  /** @type {Map<number, string>} */
+  const fetchedMaps = new Map();
+
   const locales = req.acceptsLanguages();
 
   let live = true;
   const stats = {
     type: 'stats',
-    finding: { started: false, finished: false, length: 0 },
-    filtering: { started: false, finished: false, length: 0 },
-    maps: { started: false, finished: false },
+    finding: { finished: false, length: 0 },
   };
   const sendStats = () => {
     if (live) ws.send(JSON.stringify(stats));
@@ -142,21 +116,26 @@ router.ws('/activities', async (ws, req) => {
     live = false;
   });
 
-  async function* activitiesIterator() {
+  /**
+   * Fetches your data from the Strava API
+   * @param {number} start
+   * @param {number} end
+   * @returns {AsyncGenerator<Activity[]>}
+   */
+  async function* activitiesIterator(start = undefined, end = undefined) {
     if (cachedActivities.length === 0) {
       const activities = [];
 
-      stats.finding.started = true;
-      sendStats();
-
       // eslint-disable-next-line no-restricted-syntax
-      for await (const page of eagerIterator(getStravaActivityPages())) {
+      for await (const page of eagerIterator(getStravaActivityPages(start, end))) {
         if (!live) return;
 
         stats.finding.length = activities.length + page.length;
         sendStats();
 
-        const newActivities = page.map((activity) => convertActivity(activity, locales));
+        const newActivities = page
+          .map((activity) => convertActivity(activity, locales))
+          .filter((activity) => activity.map);
         activities.push(...newActivities);
         yield newActivities;
       }
@@ -170,22 +149,8 @@ router.ws('/activities', async (ws, req) => {
     stats.finding.finished = true;
   }
 
-  async function* filteredActivitiesIterator() {
-    // eslint-disable-next-line no-restricted-syntax
-    for await (const activities of activitiesIterator()) {
-      stats.filtering.started = true;
-      const filteredActivities = filterActivities(
-        activities,
-        /** @type {string} */ (req.query.type),
-      );
-      stats.filtering.length += filteredActivities.length;
-      yield filteredActivities;
-    }
-    stats.filtering.finished = true;
-  }
-
   /**
-   * @type {(input?: Activity[]) => Promise<void>}
+   * @type {(input?: {id: number, map: string}[]) => Promise<void>}
    */
   const sendMaps = inOrder(async (activities = []) => {
     // eslint-disable-next-line no-restricted-syntax
@@ -199,34 +164,59 @@ router.ws('/activities', async (ws, req) => {
     sendStats();
   });
 
-  if (!live) return;
+  /**
+   * User type definition
+   * @typedef {object} TimeRange
+   * @property {number=} start
+   * @property {number=} end
+   */
 
-  sendStats();
+  /**
+   * User type definition
+   * @typedef {object} Message
+   * @property {TimeRange[]=} load
+   * @property {number[]=} maps
+   */
+  ws.on('message', async (data) => {
+    /**
+     * @type {Message}
+     */
+    const message = JSON.parse(data.toString());
 
-  // TODO:  stats.filtering.length = filteredActivities.length;
+    if (message.load) {
+      // eslint-disable-next-line no-restricted-syntax
+      for (const { start, end } of message.load) {
+        // eslint-disable-next-line no-restricted-syntax, no-await-in-loop
+        for await (const activities of activitiesIterator(start, end)) {
+          if (!live) return;
+          activities.forEach(({ map, id }) => {
+            fetchedMaps.set(id, map);
+          });
+          ws.send(
+            JSON.stringify({
+              type: 'activities',
+              activities: activities.map(({ map, ...activity }) => activity),
+            }),
+          );
+          sendStats();
+        }
 
-  // sendStats();
+        if (!live) return;
+        sendStats();
+      }
+    }
 
-  // eslint-disable-next-line no-restricted-syntax
-  for await (const filteredActivities of filteredActivitiesIterator()) {
-    if (!live) return;
-    ws.send(
-      JSON.stringify({
-        type: 'activities',
-        activities: filteredActivities.map(({ map, ...activity }) => activity),
-      }),
-    );
-    stats.maps.started = true;
-    sendStats();
-    sendMaps(filteredActivities);
-  }
+    if (message.maps) {
+      const mapsToSend = message.maps.map((id) => {
+        const map = fetchedMaps.get(id);
+        fetchedMaps.delete(id);
+        return { id, map };
+      });
+      sendMaps(mapsToSend);
+    }
+  });
 
-  await sendMaps();
-  stats.maps.finished = true;
-
-  if (!live) return;
-  sendStats();
-  ws.close();
+  // ws.close();
 });
 
 app.use('/api', router);
