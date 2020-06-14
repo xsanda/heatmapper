@@ -23,8 +23,8 @@
       <button @click="sockets">
         Load
       </button>
-      <button @click="clearMapCache">
-        Clear map cache
+      <button @click="clearCache">
+        Clear cache
       </button>
     </div>
     <p :class="[error && 'error']">
@@ -49,7 +49,8 @@ const count = (n, singular, plural = undefined) => {
 
 const countActivities = (n) => count(n, 'activity', 'activities');
 
-const findingString = ({ finished = false, length = 0 } = {}) => {
+const findingString = ({ finished = false, length = 0 } = {}, inCache = false) => {
+  if (finished && inCache) return `found ${countActivities(length)} in cache`;
   if (finished) return `found ${countActivities(length)}`;
   if (length) return `found ${countActivities(length)} so far`;
   return '';
@@ -74,19 +75,23 @@ const getCachedMap = (id) => {
 };
 
 const getCachedActivities = () => {
-  return JSON.parse(localStorage.getItem('activities'));
+  const cache = localStorage.getItem('activities');
+  return cache && JSON.parse(cache);
 };
 
-const saveCachedActivities = (activities) => {
-  return localStorage.setItem('activities', JSON.stringify(activities));
+const appendCachedActivities = (activities) => {
+  if (activities) {
+    const alreadyCached = getCachedActivities();
+    localStorage.setItem('activities', JSON.stringify([...(alreadyCached || []), ...activities]));
+  }
 };
 
-const clearMapCache = () => {
-  Object.keys(localStorage).forEach((key) => {
-    if (key.startsWith('map:')) {
-      localStorage.removeItem(key);
-    }
-  });
+const clearCachedActivities = () => {
+  localStorage.removeItem('activities');
+};
+
+const clearCache = () => {
+  localStorage.clear();
 };
 
 /**
@@ -140,6 +145,7 @@ export default {
       clientStats: {
         mapsRequested: 0,
         mapsLoaded: 0,
+        inCache: true,
       },
       error: null,
     };
@@ -151,7 +157,7 @@ export default {
         const { finding = {} } = this.stats;
         return capitalise(
           nonEmpties(
-            findingString(finding),
+            findingString(finding, this.clientStats.inCache),
             mapString(this.clientStats.mapsRequested, this.clientStats.mapsLoaded),
           ).join(', '),
         );
@@ -160,8 +166,8 @@ export default {
     },
   },
   methods: {
-    clearMapCache() {
-      clearMapCache();
+    clearCache() {
+      clearCache();
     },
     queryString(params) {
       const qs = new URLSearchParams();
@@ -175,10 +181,60 @@ export default {
       this.clientStats.mapsLoaded += Object.keys(maps).length;
       this.$emit('addActivityMaps', maps);
     },
+    requestMaps(ids, socket = undefined) {
+      this.clientStats.mapsRequested += ids.length;
+      const { cached, notCached } = getCachedMaps(ids);
+      if (socket && notCached.length) {
+        socket.send(
+          JSON.stringify({
+            maps: notCached,
+          }),
+        );
+      }
+      this.receiveMaps(cached);
+      this.checkFinished(socket);
+    },
+    receiveActivities(activities, socket = undefined) {
+      const filteredActivities = filterActivities(activities, this.activityType);
+      this.$emit('addActivities', filteredActivities);
+      this.requestMaps(
+        filteredActivities.map(({ id }) => id),
+        socket,
+      );
+    },
+    checkFinished(socket = undefined) {
+      if (
+        socket &&
+        this.clientStats.mapsRequested === this.clientStats.mapsLoaded &&
+        this.stats.finding.finished
+      ) {
+        socket.close();
+      }
+    },
+    startLoading(socket = undefined) {
+      const activities = getCachedActivities();
+      if (activities) {
+        this.stats = { finding: { finished: true, length: activities.length } };
+        const filteredActivities = socket
+          ? activities
+          : activities.filter(({ id }) => getCachedMap(id));
+        this.receiveActivities(filteredActivities, socket);
+      } else if (socket) {
+        clearCachedActivities(this.activities);
+        this.inCache = false;
+        socket.send(
+          JSON.stringify({
+            // load a single range covering all time
+            load: [{}],
+          }),
+        );
+      }
+    },
     async sockets() {
       this.$emit('clearActivities');
       this.clientStats.mapsLoaded = 0;
       this.clientStats.mapsRequested = 0;
+      this.error = null;
 
       // TODO: don’t open if not needed
       const socket = new WebSocket(
@@ -195,51 +251,20 @@ export default {
         }
       };
 
-      const requestMaps = (ids) => {
-        this.clientStats.mapsRequested += ids.length;
-        const { cached, notCached } = getCachedMaps(ids);
-        if (notCached.length) {
-          socket.send(
-            JSON.stringify({
-              maps: notCached,
-            }),
-          );
-        }
-        this.receiveMaps(cached);
-        checkFinished();
-      };
-
-      const receiveActivities = (activities) => {
-        const filteredActivities = filterActivities(activities, this.activityType);
-        this.$emit('addActivities', filteredActivities);
-        requestMaps(filteredActivities.map(({ id }) => id));
-      };
-
       socket.onerror = () => {
         errored = true;
         this.setError('Error fetching activities');
       };
       socket.onopen = () => {
-        const activities = getCachedActivities();
-        if (activities) {
-          this.stats = { finding: { finished: true, length: activities.length } };
-          receiveActivities(activities);
-        } else {
-          socket.send(
-            JSON.stringify({
-              // load a single range covering all time
-              load: [{}],
-            }),
-          );
-        }
+        this.startLoading(socket);
       };
       socket.onmessage = (message) => {
         const data = JSON.parse(message.data);
         if (data.type === 'stats') {
           this.stats = data;
         } else if (data.type === 'activities') {
-          saveCachedActivities(data.activities);
-          receiveActivities(data.activities);
+          this.receiveActivities(data.activities, socket);
+          appendCachedActivities(data.activities);
         } else if (data.type === 'maps') {
           saveCachedMaps(data.chunk);
           this.receiveMaps(data.chunk);
@@ -252,6 +277,11 @@ export default {
         }
       };
     },
+  },
+  mounted() {
+    if (!this.activities || this.activities.length === 0) {
+      this.startLoading();
+    }
   },
 };
 </script>
