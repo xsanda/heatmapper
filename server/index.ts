@@ -3,11 +3,13 @@
 import bodyParser from 'body-parser';
 import express from 'express';
 import expressWs from 'express-ws';
+import history from 'connect-history-api-fallback';
 import moment from 'moment';
 import 'moment/min/locales';
-import { getStravaActivities, getStravaActivityPages } from './strava';
+import { getStravaActivityPages } from './strava';
 import eagerIterator, { tick } from './eager-iterator';
-import { inOrder, memoise } from './stateful-functions';
+import { inOrder, memoize } from './stateful-functions';
+import { existsSync } from 'fs';
 
 const app = express();
 expressWs(app);
@@ -29,6 +31,24 @@ function corsConfig(req, res, next) {
 
 app.use(corsConfig);
 
+if (existsSync('../client/dist')) {
+  // Middleware for serving '/dist' directory
+  const staticFileMiddleware = express.static('../client/dist');
+
+  // 1st call for unredirected requests
+  app.use(staticFileMiddleware);
+
+  // Support history api
+  app.use(
+    history({
+      index: '../client/dist/index.html',
+    }),
+  );
+
+  // 2nd call for redirected requests
+  app.use(staticFileMiddleware);
+}
+
 /**
  * @template T
  * @param {T[]} array
@@ -41,7 +61,7 @@ function* chunkArray(array, n = 10) {
   }
 }
 
-const splitDateFormat = memoise((format) => {
+const splitDateFormat = memoize((format) => {
   // break at the last word boundary after year before day/month
   const yearFirstRegex = /^([^DMY]*Y+(?:[^DMY]*[^DMY ])?(?:\b|(?= ))) ?([^MD]*[MD]+.*)$/;
 
@@ -106,7 +126,7 @@ router.ws('/activities', async (ws, req) => {
   let live = true;
   const stats = {
     type: 'stats',
-    finding: { finished: false, length: 0 },
+    finding: { started: false, finished: false, length: 0 },
   };
   const sendStats = () => {
     if (live) ws.send(JSON.stringify(stats));
@@ -134,7 +154,7 @@ router.ws('/activities', async (ws, req) => {
         sendStats();
 
         const newActivities = page
-          .map((activity) => convertActivity(activity, locales))
+          .map((activity) => convertActivity(activity as any, locales))
           .filter((activity) => activity.map);
         activities.push(...newActivities);
         yield newActivities;

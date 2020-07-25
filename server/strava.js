@@ -7,7 +7,7 @@ import fetch from 'node-fetch';
 import { readFileSync, writeFileSync } from 'fs';
 import { parse } from 'url';
 import fp from 'find-free-port';
-import dotenv from 'dotenv';
+import * as dotenv from 'dotenv';
 
 dotenv.config();
 

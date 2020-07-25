@@ -4,7 +4,10 @@
     "types": ["node"],
     "noEmit": true,
     "allowJs": true,
-    "allowSyntheticDefaultImports": true,
-    "downlevelIteration": true
+    "esModuleInterop": true,
+    "downlevelIteration": true,
+    "moduleResolution": "node",
+    "outDir": "dist",
+    "declaration": true
   }
 }
