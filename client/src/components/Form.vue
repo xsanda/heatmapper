@@ -26,7 +26,7 @@
       <button @click="clearCache">
         Clear cache
       </button>
-      <button @click="$emit('toggle:improvedHillshade')">
+      <button @click="$emit('toggle:improved-hillshade')">
         Toggle hillshade
       </button>
     </div>
@@ -93,10 +93,6 @@ const clearCachedActivities = () => {
   localStorage.removeItem('activities');
 };
 
-const clearCache = () => {
-  localStorage.clear();
-};
-
 /**
  * @param {number[]} ids
  */
@@ -155,22 +151,24 @@ export default {
   },
   computed: {
     statusMessage() {
-      const statsMessage = () => {
-        // TODO: lift finding up
-        const { finding = {} } = this.stats;
-        return capitalise(
-          nonEmpties(
-            findingString(finding, this.clientStats.inCache),
-            mapString(this.clientStats.mapsRequested, this.clientStats.mapsLoaded),
-          ).join(', '),
-        );
-      };
-      return this.error || statsMessage();
+      return this.error || this.statsMessage();
     },
   },
   methods: {
+    statsMessage() {
+      // TODO: lift finding up
+      const { finding = {} } = this.stats;
+      return capitalise(
+        nonEmpties(
+          findingString(finding, this.clientStats.inCache),
+          mapString(this.clientStats.mapsRequested, this.clientStats.mapsLoaded),
+        ).join(', '),
+      );
+    },
     clearCache() {
-      clearCache();
+      // TODO: clear all maps
+      localStorage.clear();
+      this.$emit('clear-activities');
     },
     queryString(params) {
       const qs = new URLSearchParams();
@@ -182,7 +180,7 @@ export default {
     },
     receiveMaps(maps) {
       this.clientStats.mapsLoaded += Object.keys(maps).length;
-      this.$emit('addActivityMaps', maps);
+      this.$emit('add-activity-maps', maps);
     },
     requestMaps(ids, socket = undefined) {
       this.clientStats.mapsRequested += ids.length;
@@ -199,7 +197,7 @@ export default {
     },
     receiveActivities(activities, socket = undefined) {
       const filteredActivities = filterActivities(activities, this.activityType);
-      this.$emit('addActivities', filteredActivities);
+      this.$emit('add-activities', filteredActivities);
       this.requestMaps(
         filteredActivities.map(({ id }) => id),
         socket,
@@ -233,7 +231,7 @@ export default {
       );
     },
     async sockets() {
-      this.$emit('clearActivities');
+      this.$emit('clear-activities');
       this.clientStats.mapsLoaded = 0;
       this.clientStats.mapsRequested = 0;
       this.error = null;

@@ -2,44 +2,27 @@
   <div class="sidebar">
     <h1>Heatmapper</h1>
     <Form
-      @clearActivities="$emit('clearActivities')"
-      @addActivities="$emit('addActivities', $event)"
-      @addActivityMaps="$emit('addActivityMaps', $event)"
-      @toggle:improvedHillshade="$emit('toggle:improvedHillshade')"
+      @clear-activities="$emit('clear-activities')"
+      @add-activities="$emit('add-activities', $event)"
+      @add-activity-maps="$emit('add-activity-maps', $event)"
+      @toggle:improved-hillshade="$emit('toggle:improved-hillshade')"
     />
     <ul>
-      <li
+      <ActivityItem
         v-for="activity of activities"
         :key="activity.id"
-        :class="[selected.includes(activity.id) && 'selected']"
+        :activity="activity"
+        :selected="selected.includes(activity.id)"
         @click="select(activity.id, $event)"
         @dblclick="forceSelect(activity.id, $event)"
-      >
-        <div class="activity-name">
-          {{ activity.name }}
-        </div>
-        <div v-if="!activity.map" class="spinner">
-          <Spinner size="tiny" line-fg-color="#888" />
-        </div>
-        <div class="date">
-          {{ activity.dateString.join('\n') }}
-        </div>
-        <a
-          :href="'https://www.strava.com/activities/' + activity.id"
-          target="_blank"
-          @click="$event.stopPropagation()"
-          class="strava-link"
-          ><img src="@/assets/strava_symbol_gray.png"/><img src="@/assets/strava_symbol_orange.png"
-        /></a>
-      </li>
+      />
     </ul>
   </div>
 </template>
 
 <script>
-import Spinner from 'vue-simple-spinner';
-
 import Form from './Form.vue';
+import ActivityItem from './ActivityItem.vue';
 
 function getRange(activities, from, to) {
   const selected = [];
@@ -63,10 +46,7 @@ function cancelTextSelection() {
 
 export default {
   name: 'Sidebar',
-  components: { Form, Spinner },
-  data() {
-    return { localSelected: null };
-  },
+  components: { Form, ActivityItem },
   props: {
     activities: { type: Array, default: () => [] },
     selected: { type: Array, default: () => [] },
@@ -88,27 +68,28 @@ export default {
       cancelTextSelection();
       const newSelected = this.getSelection(id, e);
       this.localSelected = newSelected;
-      this.$emit('zoomToSelected', newSelected);
+      this.$emit('zoom-to-selected', newSelected);
     },
   },
-  updated() {
-    this.$nextTick(() => {
-      if (this.selected !== this.localSelected) {
-        this.localSelected = this.selected;
+  watch: {
+    selected(selected) {
+      if (selected !== this.localSelected) {
+        this.localSelected = selected;
         const el = this.$el.querySelector('.selected');
         if (el) el.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
       }
-    });
+    },
   },
 };
 </script>
 
-<!-- Add "scoped" attribute to limit CSS to this component only -->
-<style scoped lang="scss">
+<style lang="scss">
 .sidebar {
   flex: 0 20em;
   display: flex;
   flex-direction: column;
+  color: var(--color);
+  background-color: var(--background);
 
   h1 {
     padding: 0 1em;
@@ -119,55 +100,7 @@ export default {
     flex: 1;
     overflow: auto;
     margin: 0;
-    padding: 1em 0;
-
-    > li {
-      cursor: pointer;
-      list-style: none;
-      padding: 2px 8px;
-      font-size: 14px;
-      display: flex;
-      align-items: center;
-
-      &:hover {
-        background: #eee;
-      }
-
-      &.selected {
-        background: #ccc;
-      }
-
-      .activity-name {
-        flex: 1;
-      }
-
-      .spinner {
-        padding: 0.5em;
-      }
-
-      .strava-link {
-        $size: 1.5em;
-        height: $size;
-        width: $size;
-        display: inline-block;
-        overflow: hidden;
-
-        > img {
-          width: 100%;
-        }
-
-        &:hover > img:first-child {
-          display: none;
-        }
-      }
-
-      .date {
-        display: inline-block;
-        white-space: pre-line;
-        font-size: 0.75em;
-        text-align: right;
-      }
-    }
+    padding: 0 0 1em;
   }
 }
 </style>

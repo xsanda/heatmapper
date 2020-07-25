@@ -49,19 +49,19 @@ const layers = {
   lines: {
     source: 'lines',
     color: '#00F',
-    opacity: fromZoom([5, 0.5], [10, 0.2]),
+    opacity: fromZoom([5, 0.75], [10, 0.35]),
     width: fromZoom([5, 1], [17, 4], [22, 8]),
   },
   medium: {
     source: 'lines',
     color: '#F00',
-    opacity: fromZoom([5, 0.1], [10, 0.04]),
+    opacity: fromZoom([5, 0.2], [10, 0.08]),
     width: fromZoom([5, 1], [17, 4], [22, 8]),
   },
   hot: {
     source: 'lines',
     color: '#FF0',
-    opacity: fromZoom([5, 0.05], [10, 0.02]),
+    opacity: fromZoom([5, 0.1], [10, 0.04]),
     width: fromZoom([5, 1], [17, 4], [22, 8]),
   },
   selected: {
@@ -86,6 +86,7 @@ const buildLineLayer = (id, layer) => ({
 });
 
 export default {
+  name: 'Map',
   props: {
     activities: { type: Array, required: true },
     center: { type: Object, default: () => [0, 0] },
@@ -105,11 +106,18 @@ export default {
     return {
       token:
         'pk.eyJ1IjoiY2hhcmRpbmciLCJhIjoiY2tiYWp0cndkMDc0ZjJybXhlcHdoM2Z3biJ9.XUwOLV17ZBXE8dhp198dqg',
+      // mapStyle:
+      //   'https://s3-eu-west-1.amazonaws.com/tiles.os.uk/v2/styles/open-zoomstack-outdoor/style.json',
       mapStyle: 'mapbox://styles/charding/ckbfof39h4b2t1ildduhwlm15',
       localSelected: null,
+      // TODO: this line breaks it
+      // map: null,
     };
   },
   watch: {
+    mapStyle(style) {
+      this.map?.setStyle(style);
+    },
     activities(next) {
       this.applyActivities(next, 'lines');
     },
@@ -172,10 +180,34 @@ export default {
       this.map?.getSource(sourceID).setData(makeGeoJsonData(next));
     },
     mapLoaded(map) {
+      // // eslint-disable-next-line no-restricted-syntax
+      // for (const id of sources) {
+      //   console.log('Adding source', id, makeGeoJson());
+      //   map.addSource(id, makeGeoJson());
+      //   // eslint-disable-next-line no-await-in-loop
+      //   await new Promise((res) => setTimeout(res, 500));
+      // }
       sources.forEach((id) => map.addSource(id, makeGeoJson()));
+      // // map.addSource('global-heatmap', {
+      // //   type: 'raster',
+      // //   tiles: [
+      // //     'https://heatmap-external-a.strava.com/tiles-auth/run/mobileblue/{z}/{x}/{y}.png',
+      // //     'https://heatmap-external-b.strava.com/tiles-auth/run/mobileblue/{z}/{x}/{y}.png',
+      // //     'https://heatmap-external-c.strava.com/tiles-auth/run/mobileblue/{z}/{x}/{y}.png',
+      // //   ],
+      // //   tileSize: 256,
+      // //   attribution: 'Blue heatmap by Strava.',
+      // // });
       Object.entries(layers).forEach(([id, layer]) =>
         map.addLayer(buildLineLayer(id, layer), layer.below),
       );
+      // // map.addLayer({
+      // //   id: 'global-heatmap',
+      // //   type: 'raster',
+      // //   source: 'global-heatmap',
+      // //   minzoom: 0,
+      // //   maxzoom: 15,
+      // // });
       this.map = map;
       this.setHillshade(this.improvedHillshade);
       this.$nextTick(() => {

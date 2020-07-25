@@ -3,11 +3,11 @@
     <Sidebar
       :activities="activities"
       :selected.sync="selected"
-      @zoomToSelected="zoomToSelected"
-      @clearActivities="clearActivities"
-      @addActivities="addActivities"
-      @addActivityMaps="addActivityMaps"
-      @toggle:improvedHillshade="improvedHillshade = !improvedHillshade"
+      @zoom-to-selected="zoomToSelected"
+      @clear-activities="clearActivities"
+      @add-activities="addActivities"
+      @add-activity-maps="addActivityMaps"
+      @toggle:improved-hillshade="improvedHillshade = !improvedHillshade"
     />
     <Map
       :center.sync="location"
@@ -75,5 +75,21 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   color: #2c3e50;
+}
+
+:root {
+  --color: #222;
+  --background: #fff;
+  --background-slight: #eee;
+  --background-strong: #ccc;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color: #fff;
+    --background: #222;
+    --background-slight: #333;
+    --background-strong: #555;
+  }
 }
 </style>
