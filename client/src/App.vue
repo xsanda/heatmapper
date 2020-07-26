@@ -2,7 +2,7 @@
   <div id="app" hidden>
     <Sidebar
       :activities="activities"
-      :selected.sync="selected"
+      v-model:selected="selected"
       @zoom-to-selected="zoomToSelected"
       @clear-activities="clearActivities"
       @add-activities="addActivities"
@@ -10,17 +10,17 @@
       @toggle:improved-hillshade="improvedHillshade = !improvedHillshade"
     />
     <Map
-      :center.sync="location"
-      :zoom.sync="zoom"
+      v-model:center="location"
+      v-model:zoom="zoom"
       :activities="activities"
-      :selected.sync="selected"
+      v-model:selected="selected"
       :improved-hillshade="improvedHillshade"
       ref="map"
     />
   </div>
 </template>
 
-<script lang="ts">
+<script>
 import Sidebar from './components/Sidebar.vue';
 
 export default {

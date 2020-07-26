@@ -8,7 +8,7 @@ module.exports = {
     });
   },
   configureWebpack: {
-    resolve: { extensions: ['*', '.vue', '.js'] },
+    resolve: { extensions: ['*', '.vue', '.js', '.ts'] },
     optimization: {
       splitChunks: {
         minSize: 10000,
@@ -20,6 +20,18 @@ module.exports = {
         mapboxgl: 'mapbox-gl',
       }),
     ],
+    module: {
+      rules: [
+        {
+          test: /\.ts$/,
+          exclude: /node_modules|vue\/src/,
+          loader: 'ts-loader',
+          options: {
+            appendTsSuffixTo: [/\.vue$/],
+          },
+        },
+      ],
+    },
   },
   devServer: {
     hot: true,

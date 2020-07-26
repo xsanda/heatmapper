@@ -1,8 +1,8 @@
 <template>
-  <mapbox
+  <Mapbox
     container="map-test"
-    :map-options="{ style: mapStyle, center, zoom }"
-    :center="center"
+    :map-options="{ style: mapStyle, center: modelCenter, zoom }"
+    :center="modelCenter"
     :access-token="token"
     :map-style="mapStyle"
     :zoom="zoom"
@@ -20,6 +20,8 @@
 import Mapbox from 'mapbox-gl-vue';
 import { LngLatBounds } from 'mapbox-gl';
 import polyline from '@mapbox/polyline';
+
+import { useModelWrapper } from '../lib/modelWrapper';
 
 const fromZoom = (...pairs) => [
   'interpolate',
@@ -89,10 +91,17 @@ export default {
   name: 'Map',
   props: {
     activities: { type: Array, required: true },
-    center: { type: Object, default: () => [0, 0] },
+    center: { type: Array, default: () => [0, 0] },
     zoom: { type: Number, default: 0 },
     selected: { type: Array, default: () => [] },
     improvedHillshade: { type: Boolean, default: false },
+  },
+  setup(props, { emit }) {
+    return {
+      modelCenter: useModelWrapper(props, emit, 'center'),
+      modelZoom: useModelWrapper(props, emit, 'zoom'),
+      modelSelected: useModelWrapper(props, emit, 'selected'),
+    };
   },
   computed: {
     selectedActivities() {
@@ -234,7 +243,7 @@ export default {
     select(id) {
       const selected = [id];
       this.localSelected = selected;
-      this.$emit('update:selected', selected);
+      this.modelSelected.value = selected;
     },
     zoomend(map) {
       this.$emit('update:zoom', map.getZoom());

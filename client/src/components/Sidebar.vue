@@ -51,6 +51,14 @@ export default {
     activities: { type: Array, default: () => [] },
     selected: { type: Array, default: () => [] },
   },
+  emits: [
+    'update:selected',
+    'zoom-to-selected',
+    'clear-activities',
+    'add-activities',
+    'add-activity-maps',
+    'toggle:improved-hillshade',
+  ],
   methods: {
     getSelection(id, e) {
       if (e.metaKey || e.ctrlKey) return [...this.selected, id];
