@@ -6,6 +6,15 @@ import expressWs from 'express-ws';
 import history from 'connect-history-api-fallback';
 import moment from 'moment';
 import 'moment/min/locales';
+
+import {
+  Activity,
+  RequestMessage,
+  ResponseMessage,
+  StatsMessage,
+  TimeRange,
+} from '../shared/interfaces';
+
 import { getStravaActivityPages } from './strava';
 import eagerIterator, { tick } from './eager-iterator';
 import { inOrder, memoize } from './stateful-functions';
@@ -55,7 +64,7 @@ if (existsSync('../client/dist')) {
  * @param {number} n
  * @returns {Generator<T[]>}
  */
-function* chunkArray(array, n = 10) {
+function* chunkArray<T>(array: T[], n: number = 10): Generator<T[]> {
   for (let i = 0; i < array.length; i += n) {
     yield array.slice(i, i + n);
   }
@@ -72,38 +81,17 @@ const splitDateFormat = memoize((format) => {
   return [format];
 });
 
-/**
- * @param {moment.MomentInput} date
- * @param {string | string[]} locales
- * @returns {string[]}
- */
-const formatDateWithLineBreak = (date, locales) => {
+function formatDateWithLineBreak(date: moment.MomentInput, locales: string | string[]): string[] {
   const dateMoment = moment(date).locale(locales);
   const format = moment.localeData(locales).longDateFormat('ll');
   const splitFormat = splitDateFormat(format);
   return splitFormat.map((line) => dateMoment.format(line));
-};
+}
 
-/**
- * @typedef {object} Activity
- * @property {number} id
- * @property {string} name
- * @property {moment.MomentInput} date
- * @property {string} map
- * @property {string} type
- * @property {string[]} dateString
- */
-
-/**
- *
- * @param {any} rawActivity
- * @param {string | string[]} locales
- * @returns {Activity}
- */
 function convertActivity(
   { id, name, start_date_local: date, map: { summary_polyline: map }, type },
-  locales = ['en'],
-) {
+  locales: string | string[] = ['en'],
+): Activity {
   return {
     id,
     name,
@@ -115,21 +103,21 @@ function convertActivity(
 }
 
 /** @type {Activity[]} */
-let cachedActivities = [];
+let cachedActivities: Activity[] = [];
 
 router.ws('/activities', async (ws, req) => {
   /** @type {Map<number, string>} */
-  const fetchedMaps = new Map();
+  const fetchedMaps: Map<number, string> = new Map();
 
   const locales = req.acceptsLanguages();
 
   let live = true;
-  const stats = {
+  const stats: StatsMessage = {
     type: 'stats',
     finding: { started: false, finished: false, length: 0 },
   };
   const sendStats = () => {
-    if (live) ws.send(JSON.stringify(stats));
+    if (live) ws.send(JSON.stringify(stats as ResponseMessage));
   };
 
   ws.on('close', () => {
@@ -138,11 +126,8 @@ router.ws('/activities', async (ws, req) => {
 
   /**
    * Fetches your data from the Strava API
-   * @param {number} start
-   * @param {number} end
-   * @returns {AsyncGenerator<Activity[]>}
    */
-  async function* activitiesIterator(start = undefined, end = undefined) {
+  async function* activitiesIterator(start?: number, end?: number): AsyncGenerator<Activity[]> {
     if (cachedActivities.length === 0) {
       const activities = [];
 
@@ -169,43 +154,27 @@ router.ws('/activities', async (ws, req) => {
     stats.finding.finished = true;
   }
 
-  /**
-   * @type {(input?: {id: number, map: string}[]) => Promise<void>}
-   */
-  const sendMaps = inOrder(async (activities = []) => {
-    // eslint-disable-next-line no-restricted-syntax
-    for (const chunk of chunkArray(activities, 50)) {
-      // eslint-disable-next-line no-await-in-loop
-      await tick();
-      if (!live) return;
-      const maps = Object.fromEntries(chunk.map(({ id, map }) => [id, map]));
-      ws.send(JSON.stringify({ type: 'maps', chunk: maps }));
-    }
-    sendStats();
-  });
+  const sendMaps: (input?: { id: number; map: string }[]) => Promise<void> = inOrder(
+    async (activities = []) => {
+      // eslint-disable-next-line no-restricted-syntax
+      for (const chunk of chunkArray(activities, 50)) {
+        // eslint-disable-next-line no-await-in-loop
+        await tick();
+        if (!live) return;
+        const maps = Object.fromEntries(chunk.map(({ id, map }) => [id, map]));
+        ws.send(JSON.stringify({ type: 'maps', chunk: maps } as ResponseMessage));
+      }
+      sendStats();
+    },
+  );
 
-  /**
-   * User type definition
-   * @typedef {object} TimeRange
-   * @property {number=} start
-   * @property {number=} end
-   */
-
-  /**
-   * User type definition
-   * @typedef {object} Message
-   * @property {TimeRange[]=} load
-   * @property {number[]=} maps
-   */
   ws.on('message', async (data) => {
-    /**
-     * @type {Message}
-     */
-    const message = JSON.parse(data.toString());
+    const message: RequestMessage = JSON.parse(data.toString());
 
     if (message.load) {
       // eslint-disable-next-line no-restricted-syntax
-      for (const { start, end } of message.load) {
+      for (const { start, end } of TimeRange.cap(message.load)) {
+        sendStats();
         // eslint-disable-next-line no-restricted-syntax, no-await-in-loop
         for await (const activities of activitiesIterator(start, end)) {
           if (!live) return;
@@ -216,7 +185,7 @@ router.ws('/activities', async (ws, req) => {
             JSON.stringify({
               type: 'activities',
               activities: activities.map(({ map, ...activity }) => activity),
-            }),
+            } as ResponseMessage),
           );
           sendStats();
         }

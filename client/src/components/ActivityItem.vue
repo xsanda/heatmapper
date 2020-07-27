@@ -28,7 +28,7 @@
 <script lang="ts">
 import { Component, Vue, Prop } from 'vue-property-decorator';
 import Spinner from 'vue-simple-spinner';
-import Activity from '../interfaces/Activity';
+import Activity from '../../../shared/interfaces/Activity';
 
 @Component({
   components: { Spinner },

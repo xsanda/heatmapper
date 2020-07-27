@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "serve": "ts-node index.ts",
-    "build": "tsc"
+    "build": "tsc --build"
   },
   "dependencies": {
     "body-parser": "^1.19.0",
@@ -54,9 +54,7 @@
     },
     "parser": "babel-eslint",
     "rules": {
-      "prettier/prettier": [
-        "error"
-      ],
+      "prettier/prettier": "error",
       "comma-dangle": [
         "error",
         "always-multiline"

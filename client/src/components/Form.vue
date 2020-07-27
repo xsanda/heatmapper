@@ -3,11 +3,11 @@
     <div class="table">
       <label>
         <span>Start date</span>
-        <div><input v-model="start" name="start" type="date" /></div>
+        <div><date-input v-model="start" name="start" /></div>
       </label>
       <label>
         <span>End date</span>
-        <div><input v-model="end" name="end" type="date" /></div>
+        <div><date-input v-model="end" name="end" /></div>
       </label>
       <label>
         <span>Activity type</span>
@@ -39,8 +39,14 @@
 <script lang="ts">
 import { Component, Vue, PropSync, Prop, Watch, Ref } from 'vue-property-decorator';
 
+import { Activity, RequestMessage, ResponseMessage, TimeRange } from '../../../shared/interfaces';
+import DateInput from './DateInput.vue';
 import activityTypes from '../activityTypes';
-import Activity from '../interfaces/Activity';
+
+interface ActivityStore {
+  covered: TimeRange[];
+  activities: Activity[];
+}
 
 function count(n: number, singular: string, plural?: string): string {
   switch (n) {
@@ -62,8 +68,10 @@ function findingString({ finished = false, length = 0 } = {}, inCache = false) {
   return '';
 }
 
-function mapString(requested = 0, length = 0) {
-  if (requested && requested === length) return 'loaded all maps';
+function mapString(requested = 0, length = 0, uncached = 0) {
+  if (uncached && requested === 0) return `but no maps cached`;
+  if (uncached) return `loaded ${length} maps, ${uncached} maps not cached`;
+  if (requested && requested === length) return `loaded all maps`;
   if (length) return `loaded ${length} of ${count(requested, 'map')} so far`;
   if (requested) return `requested ${count(requested, 'map')}`;
   return '';
@@ -81,16 +89,22 @@ function getCachedMap(id: number | string) {
   return localStorage.getItem(`map:summary:${id}`);
 }
 
-function getCachedActivities(): Activity[] {
+function getActivityStore(): ActivityStore {
   const cache = localStorage.getItem('activities');
-  return cache && JSON.parse(cache);
+  return cache ? JSON.parse(cache) : { covered: [], activities: [] };
 }
 
-function appendCachedActivities(activities: Activity[]) {
-  if (activities) {
-    const alreadyCached = getCachedActivities();
-    localStorage.setItem('activities', JSON.stringify([...(alreadyCached || []), ...activities]));
-  }
+function getCachedActivities(): Activity[] {
+  return getActivityStore().activities;
+}
+
+function appendCachedActivities(activities: Activity[], end: number, start?: number) {
+  const existingStore = getActivityStore();
+  const newStore: ActivityStore = {
+    covered: TimeRange.merge((existingStore.covered || []).concat({ start, end })),
+    activities: (existingStore.activities || []).concat(activities),
+  };
+  localStorage.setItem('activities', JSON.stringify(newStore));
 }
 
 function clearCachedActivities() {
@@ -109,14 +123,36 @@ function getCachedMaps(ids: number[]) {
   return { cached, notCached };
 }
 
+function queryString(params: Record<string, string>) {
+  const qs = new URLSearchParams();
+  Object.keys(params).forEach((key) => qs.append(key, params[key]));
+  return qs.toString();
+}
+
 const nonEmpties = (...args: string[]) => args.filter(Boolean);
 const capitalise = (string: string) => string.slice(0, 1).toUpperCase() + string.slice(1);
 
-function filterActivities(activities: Activity[], type?: string): Activity[] {
-  return activities.filter((activity) => !type || type.split(',').includes(activity.type));
+function filterActivities(
+  activities: Activity[],
+  type?: string,
+  start?: Date | null,
+  end?: Date | null,
+): Activity[] {
+  const startString = start && new Date(start).toISOString();
+  const endString = end && new Date(end).toISOString();
+  console.log({ startString, endString });
+  return activities.filter((activity) =>
+    [
+      !type || type.split(',').includes(activity.type),
+      !startString || startString.localeCompare(activity.date) <= 0,
+      !endString || endString.localeCompare(activity.date) >= 0,
+    ].every(Boolean),
+  );
 }
 
-@Component({})
+@Component({
+  components: { DateInput },
+})
 export default class Form extends Vue {
   start: Date | null = null;
 
@@ -135,6 +171,7 @@ export default class Form extends Vue {
   clientStats = {
     mapsRequested: 0,
     mapsLoaded: 0,
+    mapsNotCached: 0,
     inCache: true,
   };
 
@@ -146,11 +183,16 @@ export default class Form extends Vue {
 
   statsMessage() {
     // TODO: lift finding up
-    const { finding = {} } = this.stats;
+    const { finding = {}, cleared = false } = this.stats;
+    if (cleared) return 'Cleared cache';
     return capitalise(
       nonEmpties(
         findingString(finding, this.clientStats.inCache),
-        mapString(this.clientStats.mapsRequested, this.clientStats.mapsLoaded),
+        mapString(
+          this.clientStats.mapsRequested,
+          this.clientStats.mapsLoaded,
+          this.clientStats.mapsNotCached,
+        ),
       ).join(', '),
     );
   }
@@ -159,12 +201,6 @@ export default class Form extends Vue {
     localStorage.clear();
     this.stats = { cleared: true };
     this.$emit('clear-activities');
-  }
-
-  queryString(params: Record<string, string>) {
-    const qs = new URLSearchParams();
-    Object.keys(params).forEach((key) => qs.append(key, params[key]));
-    return qs.toString();
   }
 
   setError(message: string) {
@@ -191,7 +227,12 @@ export default class Form extends Vue {
   }
 
   receiveActivities(activities: Activity[], socket?: WebSocket) {
-    const filteredActivities = filterActivities(activities, this.activityType);
+    const filteredActivities = filterActivities(
+      activities,
+      this.activityType,
+      this.start,
+      this.end,
+    );
     this.$emit('add-activities', filteredActivities);
     this.requestMaps(
       filteredActivities.map(({ id }) => id),
@@ -213,19 +254,20 @@ export default class Form extends Vue {
     const activities = getCachedActivities();
     if (activities) {
       this.stats = { finding: { finished: true, length: activities.length } };
-      const filteredActivities = activities.filter(({ id }) => getCachedMap(id));
-      this.receiveActivities(filteredActivities);
+      const cachedActivities = activities.filter(({ id }) => getCachedMap(id));
+      this.clientStats.mapsNotCached = activities.length - cachedActivities.length;
+      this.receiveActivities(cachedActivities);
     }
   }
 
-  startLoading(socket: WebSocket) {
+  startLoading(socket: WebSocket, start?: number, end?: number) {
     clearCachedActivities();
     this.clientStats.inCache = false;
     socket.send(
       JSON.stringify({
         // load a single range covering all time
-        load: [{}],
-      }),
+        load: [{ start, end }],
+      } as RequestMessage),
     );
   }
 
@@ -236,10 +278,11 @@ export default class Form extends Vue {
     this.error = null;
 
     // TODO: don’t open if not needed
-    const socket = new WebSocket(
-      `ws://${window.location.host}/api/activities?${this.queryString({})}`,
-    );
+    const socket = new WebSocket(`ws://${window.location.host}/api/activities`);
     let errored = false;
+
+    const start = this.start ? this.start.getTime() / 1000 : 0;
+    const end = this.end ? this.end.getTime() / 1000 : Date.now();
 
     const checkFinished = () => {
       if (
@@ -255,18 +298,29 @@ export default class Form extends Vue {
       this.setError('Error fetching activities');
     };
     socket.onopen = () => {
-      this.startLoading(socket);
+      this.startLoading(socket /* , start, end */);
     };
     socket.onmessage = (message) => {
-      const data = JSON.parse(message.data);
-      if (data.type === 'stats') {
-        this.stats = data;
-      } else if (data.type === 'activities') {
-        this.receiveActivities(data.activities, socket);
-        appendCachedActivities(data.activities);
-      } else if (data.type === 'maps') {
-        saveCachedMaps(data.chunk);
-        this.receiveMaps(data.chunk);
+      const data: ResponseMessage = JSON.parse(message.data);
+      switch (data.type) {
+        case 'stats': {
+          const oldStats = this.stats;
+          this.stats = data;
+          if (!oldStats?.finding?.finished && data.finding.finished) {
+            appendCachedActivities([], end, start);
+          }
+          break;
+        }
+        case 'activities':
+          this.receiveActivities(data.activities, socket);
+          appendCachedActivities(data.activities, end);
+          break;
+        case 'maps':
+          saveCachedMaps(data.chunk);
+          this.receiveMaps(data.chunk);
+          break;
+        default:
+          console.log(`Unknown message ${data}`);
       }
       checkFinished();
     };

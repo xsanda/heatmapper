@@ -4,7 +4,7 @@ import { Component, Vue, PropSync, Prop, Watch, Ref } from 'vue-property-decorat
 import * as mapboxgl from 'mapbox-gl';
 import { LngLatBounds } from 'mapbox-gl';
 import polyline from '@mapbox/polyline';
-import Activity from '../interfaces/Activity';
+import Activity from '../../../shared/interfaces/Activity';
 
 declare global {
   interface Window {

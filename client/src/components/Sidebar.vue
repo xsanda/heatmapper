@@ -24,9 +24,9 @@
 <script lang="ts">
 import { Component, Vue, PropSync, Prop, Watch, Ref, Emit } from 'vue-property-decorator';
 
+import Activity from '../../../shared/interfaces/Activity';
 import Form from './Form.vue';
 import ActivityItem from './ActivityItem.vue';
-import Activity from '../interfaces/Activity';
 
 function findLastIndex<T>(xs: T[], p: (x: T) => boolean): number {
   for (let i = xs.length - 1; i >= 0; i -= 1) {

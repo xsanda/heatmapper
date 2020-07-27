@@ -23,7 +23,7 @@
 <script lang="ts">
 import 'reflect-metadata';
 import { Component, Vue, Ref } from 'vue-property-decorator';
-import Activity from './interfaces/Activity';
+import { Activity } from '../../shared/interfaces';
 import MapComponent from './components/Map.vue';
 
 @Component({

@@ -1,0 +1,13 @@
+{
+  "compilerOptions": {
+    "target": "es2020",
+    "noEmit": true,
+    "allowJs": true,
+    "esModuleInterop": true,
+    "downlevelIteration": true,
+    "moduleResolution": "node",
+    "outDir": "dist",
+    "declaration": true
+  },
+  "include": ["**/*.ts"]
+}
