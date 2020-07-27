@@ -1,5 +1,5 @@
 <template>
-  <div id="app" hidden>
+  <div id="app">
     <Sidebar
       :activities="activities"
       :selected.sync="selected"
@@ -21,42 +21,50 @@
 </template>
 
 <script lang="ts">
-import Sidebar from './components/Sidebar.vue';
+import 'reflect-metadata';
+import { Component, Vue, Ref } from 'vue-property-decorator';
+import Activity from './interfaces/Activity';
+import MapComponent from './components/Map.vue';
 
-export default {
-  name: 'App',
+@Component({
   components: {
-    Sidebar,
-    Map: () => import('./components/Map.vue'),
-  },
-  data() {
-    return {
-      location: { lat: 51.45, lng: -2.6 },
-      zoom: 10,
-      activities: [],
-      selected: [],
-      improvedHillshade: false,
-    };
-  },
-  methods: {
-    clearActivities() {
-      this.activities = [];
-    },
-    addActivities(activities) {
-      this.activities.push(...activities);
-    },
-    addActivityMaps(maps) {
-      Object.entries(maps).forEach(([activity, map]) => {
-        const i = this.activities.findIndex(({ id }) => id.toString() === activity);
-        this.$set(this.activities, i, { ...this.activities[i], map });
-      });
-    },
-    zoomToSelected(selection) {
-      this.selected = selection;
-      this.$refs.map.zoomToSelection();
-    },
-  },
-};
+    Sidebar: () => import('./components/Sidebar.vue'),
+    Map: MapComponent,
+  } as any,
+})
+export default class App extends Vue {
+  @Ref() map!: MapComponent;
+
+  location = { lat: 51.45, lng: -2.6 };
+
+  zoom = 10;
+
+  activities: Activity[] = [];
+
+  selected: Activity[] = [];
+
+  improvedHillshade = false;
+
+  clearActivities() {
+    this.activities = [];
+  }
+
+  addActivities(activities: Activity[]) {
+    this.activities.push(...activities);
+  }
+
+  addActivityMaps(maps: never) {
+    Object.entries(maps).forEach(([activity, map]) => {
+      const i = this.activities.findIndex(({ id }) => id.toString() === activity);
+      this.$set(this.activities, i, { ...this.activities[i], map });
+    });
+  }
+
+  zoomToSelected(selection: Activity[]) {
+    this.selected = selection;
+    this.map.zoomToSelection();
+  }
+}
 </script>
 
 <style>

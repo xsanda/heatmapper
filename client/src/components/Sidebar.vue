@@ -2,6 +2,7 @@
   <div class="sidebar">
     <h1>Heatmapper</h1>
     <Form
+      ref="form"
       @clear-activities="$emit('clear-activities')"
       @add-activities="$emit('add-activities', $event)"
       @add-activity-maps="$emit('add-activity-maps', $event)"
@@ -20,67 +21,93 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
+import { Component, Vue, PropSync, Prop, Watch, Ref, Emit } from 'vue-property-decorator';
+
 import Form from './Form.vue';
 import ActivityItem from './ActivityItem.vue';
+import Activity from '../interfaces/Activity';
 
-function getRange(activities, from, to) {
-  const selected = [];
-  if (from === undefined) return [];
-  if (to === undefined) return [from];
-  if (from === to) return [from];
-  let inRange = false;
-  // eslint-disable-next-line no-restricted-syntax
-  for (const activity of activities) {
-    const found = activity.id === from || activity.id === to;
-    if (inRange || found) selected.push(activity.id);
-    if (found && inRange) return selected;
-    if (found) inRange = !inRange;
+function findLastIndex<T>(xs: T[], p: (x: T) => boolean): number {
+  for (let i = xs.length - 1; i >= 0; i -= 1) {
+    if (p(xs[i])) return i;
   }
-  return [from, to];
+  return -1;
+}
+
+function findLast<T>(xs: T[], p: (x: T) => boolean): T {
+  return xs[findLastIndex(xs, p)];
+}
+
+function getRange(activities: Activity[], to: number, from?: number | number[]): number[] {
+  if (to === undefined) return [];
+  if (from === undefined) return [to];
+  const fromArray: number[] = [from].flat();
+  if (fromArray.includes(to)) return fromArray;
+
+  const selected: number[] = [];
+
+  const start = activities.findIndex(({ id }) => to === id || fromArray.includes(id));
+  if (!start) return [to, ...fromArray];
+  const end = findLastIndex(activities, ({ id }) => to === id || fromArray.includes(id));
+  return activities.slice(start, end + 1).map(({ id }) => id);
 }
 
 function cancelTextSelection() {
-  window.getSelection?.().removeAllRanges();
+  window.getSelection?.()?.removeAllRanges();
 }
 
-export default {
-  name: 'Sidebar',
+@Component({
   components: { Form, ActivityItem },
-  props: {
-    activities: { type: Array, default: () => [] },
-    selected: { type: Array, default: () => [] },
-  },
-  methods: {
-    getSelection(id, e) {
-      if (e.metaKey || e.ctrlKey) return [...this.selected, id];
-      if (e.shiftKey) return getRange(this.activities, this.selected[0], id);
-      return [id];
-    },
-    select(id, e) {
-      if (e.detail > 1) return;
-      if (e.shiftKey) cancelTextSelection();
-      const newSelected = this.getSelection(id, e);
-      this.localSelected = newSelected;
-      this.$emit('update:selected', newSelected);
-    },
-    forceSelect(id, e) {
-      cancelTextSelection();
-      const newSelected = this.getSelection(id, e);
-      this.localSelected = newSelected;
-      this.$emit('zoom-to-selected', newSelected);
-    },
-  },
-  watch: {
-    selected(selected) {
-      if (selected !== this.localSelected) {
-        this.localSelected = selected;
-        const el = this.$el.querySelector('.selected');
-        if (el) el.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-      }
-    },
-  },
-};
+})
+export default class Sidebar extends Vue {
+  @Prop({ default: () => [] }) activities!: Activity[];
+
+  @Prop({ default: () => [] }) selected!: number[];
+
+  @Ref() form!: Form;
+
+  localSelected?: number[] = undefined;
+
+  selectionBase?: number[] = undefined;
+
+  getSelection(id: number, e: MouseEvent): number[] {
+    if (e.metaKey || e.ctrlKey) return [...this.selected, id];
+    if (e.shiftKey) return getRange(this.activities, id, this.selectionBase);
+    return [id];
+  }
+
+  select(id: number, e: MouseEvent) {
+    if (e.detail > 1) return;
+    if (e.shiftKey) cancelTextSelection();
+    const newSelected = this.getSelection(id, e);
+    if (newSelected.length === 1) this.selectionBase = newSelected;
+    this.localSelected = newSelected;
+    this.$emit('update:selected', newSelected);
+  }
+
+  @Emit('zoom-to-selected')
+  forceSelect(id: number, e: MouseEvent) {
+    cancelTextSelection();
+    return this.selected;
+  }
+
+  @Watch('selected') async onSelected(selected: number[]) {
+    if (selected !== this.localSelected) {
+      this.localSelected = selected;
+      this.selectionBase = selected;
+      await this.$nextTick();
+      const el = this.$el.querySelector('.selected');
+      if (el) el.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    }
+  }
+
+  mounted() {
+    if (!this.activities || this.activities.length === 0) {
+      this.form.loadFromCache();
+    }
+  }
+}
 </script>
 
 <style lang="scss">

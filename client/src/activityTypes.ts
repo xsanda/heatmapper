@@ -1,4 +1,4 @@
-const activityTypes /* : { [name: string]: string } */ = {
+const activityTypes: { [name: string]: string } = {
   'Hike,Run,Walk': 'All on foot',
   AlpineSki: 'Downhill skiing',
   BackcountrySki: 'Off-piste skiing',

@@ -14,16 +14,24 @@
     "express": "^4.0.0",
     "express-ws": "^4.0.0",
     "mapbox-gl": "^1.11.0",
-    "mapbox-gl-vue": "^2.0.4",
+    "reflect-metadata": "^0.1.13",
     "vue": "^2.6.11",
+    "vue-class-component": "^7.2.3",
     "vue-head": "^2.2.0",
+    "vue-property-decorator": "^8.4.2",
     "vue-simple-spinner": "^1.2.10"
   },
   "devDependencies": {
+    "@types/mapbox-gl": "^1.11.1",
+    "@types/mapbox__polyline": "^1.0.0",
+    "@typescript-eslint/eslint-plugin": "^2.33.0",
+    "@typescript-eslint/parser": "^2.33.0",
     "@vue/cli-plugin-babel": "~4.4.0",
     "@vue/cli-plugin-eslint": "~4.4.0",
+    "@vue/cli-plugin-typescript": "~4.4.0",
     "@vue/cli-service": "~4.4.0",
     "@vue/eslint-config-airbnb": "^5.0.2",
+    "@vue/eslint-config-typescript": "^5.0.2",
     "babel-eslint": "^10.1.0",
     "eslint": "^6.7.2",
     "eslint-config-prettier": "^6.11.0",
@@ -32,7 +40,10 @@
     "eslint-plugin-prettier": "^3.1.3",
     "eslint-plugin-vue": "^6.2.2",
     "node-sass": "^4.14.1",
+    "prettier": "^2.0.5",
     "sass-loader": "^8.0.2",
+    "ts-loader": "^8.0.1",
+    "typescript": "^3.9.7",
     "vue-template-compiler": "^2.6.11",
     "webpack": "^4.43.0"
   },
@@ -59,8 +70,9 @@
       "prettier",
       "babel"
     ],
+    "parser": "vue-eslint-parser",
     "parserOptions": {
-      "parser": "babel-eslint"
+      "parser": "@typescript-eslint/parser"
     },
     "rules": {
       "comma-dangle": [
@@ -78,14 +90,16 @@
       "vue/html-indent": "off",
       "vue/html-closing-bracket-newline": "off",
       "vue/max-attributes-per-line": "off",
-      "max-len": "warn",
       "no-unused-expressions": "off",
-      "babel/no-unused-expressions": "error"
+      "babel/no-unused-expressions": "error",
+      "no-unused-vars": "off",
+      "class-methods-use-this": "off"
     }
   },
   "browserslist": [
     "> 1%",
     "last 2 versions",
     "not dead"
-  ]
+  ],
+  "types": "./src/types"
 }

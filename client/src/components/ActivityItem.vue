@@ -1,5 +1,9 @@
 <template>
-  <li :class="['activity-item', { selected }]">
+  <li
+    :class="['activity-item', { selected }]"
+    @click="$emit('click', $event)"
+    @dblclick="$emit('dblclick', $event)"
+  >
     <div class="activity-name">
       {{ activity.name }}
     </div>
@@ -21,17 +25,19 @@
   </li>
 </template>
 
-<script>
+<script lang="ts">
+import { Component, Vue, Prop } from 'vue-property-decorator';
 import Spinner from 'vue-simple-spinner';
+import Activity from '../interfaces/Activity';
 
-export default {
-  name: 'ActivityItem',
+@Component({
   components: { Spinner },
-  props: {
-    activity: { type: Object, required: true },
-    selected: { type: Boolean, default: false },
-  },
-};
+})
+export default class ActivityItem extends Vue {
+  @Prop({ required: true }) activity!: Activity;
+
+  @Prop({ default: false }) selected!: boolean;
+}
 </script>
 
 <style lang="scss">
