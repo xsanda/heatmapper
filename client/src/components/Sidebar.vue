@@ -48,7 +48,7 @@ function getRange(activities: Activity[], to: number, from?: number | number[]):
   const selected: number[] = [];
 
   const start = activities.findIndex(({ id }) => to === id || fromArray.includes(id));
-  if (!start) return [to, ...fromArray];
+  if (start === -1) return [to, ...fromArray];
   const end = findLastIndex(activities, ({ id }) => to === id || fromArray.includes(id));
   return activities.slice(start, end + 1).map(({ id }) => id);
 }
