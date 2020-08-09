@@ -6,7 +6,7 @@ interface TimeRange {
 function sort(ranges: TimeRange[]): TimeRange[] {
   return ranges
     .slice()
-    .sort((a, b) => (a.start ?? -Infinity) - (b.start ?? +Infinity));
+    .sort(({ start: a = -Infinity }, { start: b = -Infinity }) => a - b);
 }
 function* pairs(ranges: TimeRange[]): Generator<[TimeRange?, TimeRange?]> {
   for (let i = 0; i <= ranges.length; i++) {
@@ -49,7 +49,10 @@ namespace TimeRange {
     end?: number
   ): TimeRange[] {
     return invert(
-      invert(ranges).concat([{ end: start }, { start: end ?? Date.now() }])
+      invert(ranges).concat([
+        { end: start },
+        { start: end ?? Date.now() / 1000 },
+      ])
     );
   }
 }
