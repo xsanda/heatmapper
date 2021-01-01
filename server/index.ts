@@ -186,7 +186,7 @@ router.ws('/activities', async (ws, req) => {
         activities.push(...newActivities);
         yield newActivities;
       }
-      // cachedActivities = activities;
+      cachedActivities = activities;
     } else {
       stats.finding.length = cachedActivities.length;
       sendStats();
@@ -295,8 +295,6 @@ router.ws('/activities', async (ws, req) => {
       sendMaps(message.maps);
     }
   });
-
-  // ws.close();
 });
 
 app.use('/api', router);

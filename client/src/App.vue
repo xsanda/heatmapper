@@ -33,7 +33,7 @@ import MapComponent from './components/Map.vue';
   } as any,
 })
 export default class App extends Vue {
-  @Ref() map!: MapComponent;
+  @Ref() map!: Vue & { zoomToSelection(): void };
 
   location = { lat: 51.45, lng: -2.6 };
 

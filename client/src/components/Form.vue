@@ -3,18 +3,22 @@
     <div class="table">
       <label>
         <span>Start date</span>
-        <div><date-input v-model="start" name="start" /></div>
+        <div>
+          <date-input v-model="start" name="start" />
+        </div>
       </label>
       <label>
         <span>End date</span>
-        <div><date-input v-model="end" name="end" /></div>
+        <div>
+          <date-input v-model="end" name="end" />
+        </div>
       </label>
       <label>
         <span>Activity type</span>
         <div>
           <select v-model="activityType">
-            <option selected value="">All activities</option>
-            <option v-for="[x, y] of activityTypes" :key="x" :value="x">{{ y }}</option>
+            <option selected :value="''">All activities</option>
+            <option v-for="[id, label] of activityTypes" :key="id" :value="id" v-text="label" />
           </select>
         </div>
       </label>
@@ -26,18 +30,15 @@
       <button @click="clearCache">Clear cache</button>
       <button @click="$emit('toggle:improved-hillshade')">Toggle hillshade</button>
     </div>
-    <p :class="[error && 'error']">
-      {{ statusMessage }}
-    </p>
+    <p :class="[error && 'error']" v-text="statusMessage" />
   </aside>
 </template>
 
 <script lang="ts">
-import { Component, Vue, PropSync, Prop, Watch, Ref } from 'vue-property-decorator';
+import { Component, Vue } from 'vue-property-decorator';
 
 import {
   Activity,
-  RequestMessage,
   ResponseMessage,
   TimeRange,
   Route,
