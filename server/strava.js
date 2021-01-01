@@ -35,12 +35,12 @@ async function getStravaToken(tokens = undefined) {
     const jsonStr = readFileSync(AUTH_CACHE_FILE, 'utf-8');
     Object.assign(cache, JSON.parse(jsonStr));
   } catch (error) {
-    console.log(error);
+    if (error.code !== "ENOENT") throw error;
   }
-  console.debug(`ref: ${cache.stravaRefreshToken.substring(0, 6)}`);
+  console.debug(`ref: ${cache.stravaRefreshToken?.substring(0, 6)}`);
 
   // get new tokens
-  const data = await fetch('https://www.strava.com/oauth/token', {
+  const res = await fetch('https://www.strava.com/oauth/token', {
     method: 'post',
     body: JSON.stringify({
       grant_type: 'refresh_token',
@@ -49,7 +49,12 @@ async function getStravaToken(tokens = undefined) {
       ...(tokens || { refresh_token: cache.stravaRefreshToken }),
     }),
     headers: { 'Content-Type': 'application/json' },
-  }).then((res) => res.json());
+  });
+  if (res.status >= 400 && tokens) {
+    console.error("/token:", res.status, "body:", await res.json());
+    process.exit(1);
+  }
+  const data = await res.json();
   cache.stravaAccessToken = data.access_token;
   cache.stravaRefreshToken = data.refresh_token;
 
