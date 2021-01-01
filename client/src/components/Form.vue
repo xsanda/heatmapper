@@ -17,7 +17,7 @@
         <span>Activity type</span>
         <div>
           <select v-model="activityType">
-            <option selected :value="''">All activities</option>
+            <option selected value="">All activities</option>
             <option v-for="[id, label] of activityTypes" :key="id" :value="id" v-text="label" />
           </select>
         </div>
