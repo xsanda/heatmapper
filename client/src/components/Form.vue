@@ -37,13 +37,7 @@
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
 
-import {
-  Activity,
-  ResponseMessage,
-  TimeRange,
-  Route,
-  XOR,
-} from '../../../shared/interfaces';
+import { Activity, ResponseMessage, TimeRange, Route, XOR } from '../../../shared/interfaces';
 import DateInput from './DateInput.vue';
 import activityTypes from '../activityTypes';
 import Socket from '../socket';
@@ -273,7 +267,7 @@ export default class Form extends Vue {
       this.clientStats.mapsRequested === this.clientStats.mapsLoaded &&
       this.stats.finding?.finished
     ) {
-      console.log('Closing socket', socket.id);
+      console.info('Closing socket', socket.id);
       socket.close();
     }
   }
@@ -289,7 +283,6 @@ export default class Form extends Vue {
   }
 
   startLoading(socket: Socket, ranges: TimeRange[]) {
-    console.log(ranges);
     socket.sendRequest({
       activities: ranges,
     });

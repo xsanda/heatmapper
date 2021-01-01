@@ -91,211 +91,211 @@ const buildLineLayer = (id: string, layer: LayerDef): mapboxgl.Layer => ({
 export default class Map extends Vue {
   render() {
     return (
-      <div class="map-container" ref="container">
-        {!window.cachedMapComponent && <div id="map" ref="mapElem" />}
+      <div class= "map-container" ref = "container" >
+        {!window.cachedMapComponent && <div id="map" ref = "mapElem" />}
       </div>
     );
   }
 
-  @PropSync('center', { required: true }) modelCenter!: mapboxgl.LngLatLike;
+@PropSync('center', { required: true }) modelCenter!: mapboxgl.LngLatLike;
 
-  @PropSync('zoom', { default: 0 }) modelZoom!: number;
+@PropSync('zoom', { default: 0 }) modelZoom!: number;
 
-  @PropSync('improvedHillshade', { default: false }) modelImprovedHillshade!: boolean;
+@PropSync('improvedHillshade', { default: false }) modelImprovedHillshade!: boolean;
 
-  @PropSync('selected', { default: () => [] }) modelSelected!: number[];
+@PropSync('selected', { default: () => [] }) modelSelected!: number[];
 
-  @Prop({ required: true }) readonly activities!: Activity[];
+@Prop({ required: true }) readonly activities!: Activity[];
 
-  @Ref() container!: HTMLDivElement;
+@Ref() container!: HTMLDivElement;
 
-  @Ref() mapElem!: HTMLDivElement;
+@Ref() mapElem!: HTMLDivElement;
 
-  get selectedActivities() {
-    return this.activities.filter((activity) => this.modelSelected.includes(activity.id));
-  }
+get selectedActivities() {
+  return this.activities.filter((activity) => this.modelSelected.includes(activity.id));
+}
 
-  token =
-    'pk.eyJ1IjoiY2hhcmRpbmciLCJhIjoiY2tiYWp0cndkMDc0ZjJybXhlcHdoM2Z3biJ9.XUwOLV17ZBXE8dhp198dqg';
+token =
+  'pk.eyJ1IjoiY2hhcmRpbmciLCJhIjoiY2tiYWp0cndkMDc0ZjJybXhlcHdoM2Z3biJ9.XUwOLV17ZBXE8dhp198dqg';
 
-  mapStyle =
-    // 'https://s3-eu-west-1.amazonaws.com/tiles.os.uk/v2/styles/open-zoomstack-outdoor/style.json';
-    'mapbox://styles/charding/ckbfof39h4b2t1ildduhwlm15';
+mapStyle =
+  // 'https://s3-eu-west-1.amazonaws.com/tiles.os.uk/v2/styles/open-zoomstack-outdoor/style.json';
+  'mapbox://styles/charding/ckbfof39h4b2t1ildduhwlm15';
 
-  localSelected?: number[];
+localSelected ?: number[];
 
-  map?: mapboxgl.Map = undefined;
+map ?: mapboxgl.Map = undefined;
 
-  @Watch('mapStyle') onMapStyle(style: string) {
-    this.map?.setStyle(style);
-  }
+@Watch('mapStyle') onMapStyle(style: string) {
+  this.map?.setStyle(style);
+}
 
-  @Watch('activities') onActivities(activities: Activity[]) {
-    this.applyActivities(activities, 'lines');
-  }
+@Watch('activities') onActivities(activities: Activity[]) {
+  this.applyActivities(activities, 'lines');
+}
 
-  @Watch('selectedActivities') onSelectedActivities(selectedActivities: Activity[]) {
-    this.applyActivities(selectedActivities, 'selected');
-  }
+@Watch('selectedActivities') onSelectedActivities(selectedActivities: Activity[]) {
+  this.applyActivities(selectedActivities, 'selected');
+}
 
-  @Watch('selected') onSelected() {
-    this.$nextTick(() => {
-      if (this.modelSelected !== this.localSelected) {
-        this.localSelected = this.modelSelected;
-        this.flyTo(this.selectedActivities);
-      }
-    });
-  }
-
-  @Watch('modelImprovedHillshade') onImprovedHillshade(improvedHillshade: boolean) {
-    this.map?.setLayoutProperty(
-      'improved-hillshading',
-      'visibility',
-      improvedHillshade ? 'visible' : 'none',
-    );
-    this.map?.setLayoutProperty(
-      'hillshade-greys',
-      'visibility',
-      !improvedHillshade ? 'visible' : 'none',
-    );
-  }
-
-  flyTo(activities: Activity[], zoom = false) {
-    const padding = 20;
-
-    const { map } = this;
-
-    if (!map || activities.length === 0) return;
-    const coordinates = activities.flatMap(({ map: line }) =>
-      polyline.decode(line).map<[number, number]>(([y, x]) => [x, y]),
-    );
-    const bounds = coordinates.reduce(
-      (acc, coord) => acc.extend(coord),
-      new LngLatBounds(coordinates[0], coordinates[0]),
-    );
-    const { width, height } = map.getCanvas().getBoundingClientRect();
-    const screenNorthEast = map.unproject([width - padding, padding]);
-    const screenSouthWest = map.unproject([padding, height - padding]);
-    const screenBounds = new LngLatBounds(screenSouthWest, screenNorthEast);
-    if (
-      zoom ||
-      !screenBounds.contains(bounds.getSouthWest()) ||
-      !screenBounds.contains(bounds.getNorthEast())
-    ) {
-      const maxZoom = zoom ? 30 : map.getZoom();
-      map.fitBounds(bounds, {
-        padding,
-        linear: true,
-        maxZoom,
-      });
+@Watch('selected') onSelected() {
+  this.$nextTick(() => {
+    if (this.modelSelected !== this.localSelected) {
+      this.localSelected = this.modelSelected;
+      this.flyTo(this.selectedActivities);
     }
-  }
+  });
+}
 
-  zoomToSelection() {
-    this.flyTo(this.selectedActivities, true);
-  }
+@Watch('modelImprovedHillshade') onImprovedHillshade(improvedHillshade: boolean) {
+  this.map?.setLayoutProperty(
+    'improved-hillshading',
+    'visibility',
+    improvedHillshade ? 'visible' : 'none',
+  );
+  this.map?.setLayoutProperty(
+    'hillshade-greys',
+    'visibility',
+    !improvedHillshade ? 'visible' : 'none',
+  );
+}
 
-  applyActivities(next: Activity[], sourceID: string) {
-    const source = this.map?.getSource(sourceID);
-    (source as mapboxgl.GeoJSONSource)?.setData(makeGeoJsonData(next));
-  }
+flyTo(activities: Activity[], zoom = false) {
+  const padding = 20;
 
-  mapLoaded(map: mapboxgl.Map) {
-    map.resize();
+  const { map } = this;
 
-    // // eslint-disable-next-line no-restricted-syntax
-    // for (const id of sources) {
-    //   console.log('Adding source', id, makeGeoJson());
-    //   map.addSource(id, makeGeoJson());
-    //   // eslint-disable-next-line no-await-in-loop
-    //   await new Promise((res) => setTimeout(res, 500));
-    // }
-    sources.forEach((id) => map.addSource(id, makeGeoJson()));
-    // // map.addSource('global-heatmap', {
-    // //   type: 'raster',
-    // //   tiles: [
-    // //     'https://heatmap-external-a.strava.com/tiles-auth/run/mobileblue/{z}/{x}/{y}.png',
-    // //     'https://heatmap-external-b.strava.com/tiles-auth/run/mobileblue/{z}/{x}/{y}.png',
-    // //     'https://heatmap-external-c.strava.com/tiles-auth/run/mobileblue/{z}/{x}/{y}.png',
-    // //   ],
-    // //   tileSize: 256,
-    // //   attribution: 'Blue heatmap by Strava.',
-    // // });
-    Object.entries(layers).forEach(([id, layer]) => map.addLayer(buildLineLayer(id, layer)));
-    // // map.addLayer({
-    // //   id: 'global-heatmap',
-    // //   type: 'raster',
-    // //   source: 'global-heatmap',
-    // //   minzoom: 0,
-    // //   maxzoom: 15,
-    // // });
-    this.onImprovedHillshade(this.modelImprovedHillshade);
-    this.$nextTick(() => {
-      this.applyActivities(this.activities, 'lines');
-      this.applyActivities(this.selectedActivities, 'selected');
+  if (!map || activities.length === 0) return;
+  const coordinates = activities.flatMap(({ map: line }) =>
+    polyline.decode(line).map<[number, number]>(([y, x]) => [x, y]),
+  );
+  const bounds = coordinates.reduce(
+    (acc, coord) => acc.extend(coord),
+    new LngLatBounds(coordinates[0], coordinates[0]),
+  );
+  const { width, height } = map.getCanvas().getBoundingClientRect();
+  const screenNorthEast = map.unproject([width - padding, padding]);
+  const screenSouthWest = map.unproject([padding, height - padding]);
+  const screenBounds = new LngLatBounds(screenSouthWest, screenNorthEast);
+  if (
+    zoom ||
+    !screenBounds.contains(bounds.getSouthWest()) ||
+    !screenBounds.contains(bounds.getNorthEast())
+  ) {
+    const maxZoom = zoom ? 30 : map.getZoom();
+    map.fitBounds(bounds, {
+      padding,
+      linear: true,
+      maxZoom,
     });
   }
+}
 
-  click(map: mapboxgl.Map, e: mapboxgl.MapMouseEvent) {
-    const surround = (
-      point: mapboxgl.Point,
-      offset: number,
-    ): [mapboxgl.PointLike, mapboxgl.PointLike] => [
+zoomToSelection() {
+  this.flyTo(this.selectedActivities, true);
+}
+
+applyActivities(next: Activity[], sourceID: string) {
+  const source = this.map?.getSource(sourceID);
+  (source as mapboxgl.GeoJSONSource)?.setData(makeGeoJsonData(next));
+}
+
+mapLoaded(map: mapboxgl.Map) {
+  map.resize();
+
+  // // eslint-disable-next-line no-restricted-syntax
+  // for (const id of sources) {
+  //   console.log('Adding source', id, makeGeoJson());
+  //   map.addSource(id, makeGeoJson());
+  //   // eslint-disable-next-line no-await-in-loop
+  //   await new Promise((res) => setTimeout(res, 500));
+  // }
+  sources.forEach((id) => map.addSource(id, makeGeoJson()));
+  // // map.addSource('global-heatmap', {
+  // //   type: 'raster',
+  // //   tiles: [
+  // //     'https://heatmap-external-a.strava.com/tiles-auth/run/mobileblue/{z}/{x}/{y}.png',
+  // //     'https://heatmap-external-b.strava.com/tiles-auth/run/mobileblue/{z}/{x}/{y}.png',
+  // //     'https://heatmap-external-c.strava.com/tiles-auth/run/mobileblue/{z}/{x}/{y}.png',
+  // //   ],
+  // //   tileSize: 256,
+  // //   attribution: 'Blue heatmap by Strava.',
+  // // });
+  Object.entries(layers).forEach(([id, layer]) => map.addLayer(buildLineLayer(id, layer)));
+  // // map.addLayer({
+  // //   id: 'global-heatmap',
+  // //   type: 'raster',
+  // //   source: 'global-heatmap',
+  // //   minzoom: 0,
+  // //   maxzoom: 15,
+  // // });
+  this.onImprovedHillshade(this.modelImprovedHillshade);
+  this.$nextTick(() => {
+    this.applyActivities(this.activities, 'lines');
+    this.applyActivities(this.selectedActivities, 'selected');
+  });
+}
+
+click(map: mapboxgl.Map, e: mapboxgl.MapMouseEvent) {
+  const surround = (
+    point: mapboxgl.Point,
+    offset: number,
+  ): [mapboxgl.PointLike, mapboxgl.PointLike] => [
       [point.x - offset, point.y + offset],
       [point.x + offset, point.y - offset],
     ];
-    for (let i = 0; i < 5; i += 1) {
-      const neighbours = map.queryRenderedFeatures(surround(e.point, i), {
-        layers: ['lines', 'selected'],
-      });
-      if (neighbours.length > 0) {
-        this.select(neighbours[neighbours.length - 1].id as number);
-        return;
-      }
+  for (let i = 0; i < 5; i += 1) {
+    const neighbours = map.queryRenderedFeatures(surround(e.point, i), {
+      layers: ['lines', 'selected'],
+    });
+    if (neighbours.length > 0) {
+      this.select(neighbours[neighbours.length - 1].id as number);
+      return;
     }
-    this.select();
   }
+  this.select();
+}
 
-  select(id?: number) {
-    const selected = id !== undefined ? [id] : [];
-    this.localSelected = selected;
-    this.modelSelected = selected;
+select(id ?: number) {
+  const selected = id !== undefined ? [id] : [];
+  this.localSelected = selected;
+  this.modelSelected = selected;
+}
+
+zoomend(map: mapboxgl.Map) {
+  this.modelZoom = map.getZoom();
+}
+
+moveend(map: mapboxgl.Map) {
+  this.$emit('update:center', map.getCenter());
+}
+
+mounted() {
+  let map: mapboxgl.Map;
+  const cachedMap = window.cachedMapComponent?.map;
+  if (cachedMap) {
+    this.container.appendChild(cachedMap.getContainer());
+    map = cachedMap;
+  } else {
+    map = new mapboxgl.Map({
+      accessToken: this.token,
+      container: this.mapElem,
+      style: this.mapStyle,
+      center: this.modelCenter,
+      zoom: this.modelZoom,
+    });
+    map.addControl(new mapboxgl.FullscreenControl(), 'top-right');
+    map.addControl(new mapboxgl.ScaleControl(), 'bottom-left');
   }
+  this.map = map;
 
-  zoomend(map: mapboxgl.Map) {
-    this.modelZoom = map.getZoom();
-  }
-
-  moveend(map: mapboxgl.Map) {
-    this.$emit('update:center', map.getCenter());
-  }
-
-  mounted() {
-    let map: mapboxgl.Map;
-    const cachedMap = window.cachedMapComponent?.map;
-    if (cachedMap) {
-      this.container.appendChild(cachedMap.getContainer());
-      map = cachedMap;
-    } else {
-      map = new mapboxgl.Map({
-        accessToken: this.token,
-        container: this.mapElem,
-        style: this.mapStyle,
-        center: this.modelCenter,
-        zoom: this.modelZoom,
-      });
-      map.addControl(new mapboxgl.FullscreenControl(), 'top-right');
-      map.addControl(new mapboxgl.ScaleControl(), 'bottom-left');
-    }
-    this.map = map;
-
-    // Always delegate to the correct instance
-    window.cachedMapComponent = this;
-    this.map.on('zoomend', () => window.cachedMapComponent?.zoomend(map));
-    this.map.on('moveend', () => window.cachedMapComponent?.moveend(map));
-    this.map.on('click', (ev) => window.cachedMapComponent?.click(map, ev));
-    this.map.on('load', () => window.cachedMapComponent?.mapLoaded(map));
-  }
+  // Always delegate to the correct instance
+  window.cachedMapComponent = this;
+  this.map.on('zoomend', () => window.cachedMapComponent?.zoomend(map));
+  this.map.on('moveend', () => window.cachedMapComponent?.moveend(map));
+  this.map.on('click', (ev) => window.cachedMapComponent?.click(map, ev));
+  this.map.on('load', () => window.cachedMapComponent?.mapLoaded(map));
+}
 }
 </script>
 

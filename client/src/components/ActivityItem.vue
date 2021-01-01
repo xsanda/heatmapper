@@ -4,15 +4,11 @@
     @click="$emit('click', $event)"
     @dblclick="$emit('dblclick', $event)"
   >
-    <div class="activity-name">
-      {{ activity.name }}
-    </div>
+    <div class="activity-name" v-text="activity.name" />
     <div v-if="!activity.map" class="spinner">
       <Spinner size="tiny" line-fg-color="#888" />
     </div>
-    <div class="date">
-      {{ activity.dateString.join('\n') }}
-    </div>
+    <div class="date" v-text="activity.dateString.join('\n')" />
     <a
       :href="'https://www.strava.com/activities/' + activity.id"
       target="_blank"
