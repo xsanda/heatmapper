@@ -3,7 +3,7 @@
 ## Run all servers together for development
 
 ```
-yarn develop
+./serve
 ```
 
 ## Client commands

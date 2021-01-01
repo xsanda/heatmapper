@@ -13,9 +13,11 @@ import {
   ResponseMessage,
   StatsMessage,
   TimeRange,
+  Route,
+  ActivityMap,
 } from '../shared/interfaces';
 
-import { getStravaActivityPages } from './strava';
+import { getStravaActivitiesPages, getStravaRoutesPages, getActivity } from './strava';
 import eagerIterator, { tick } from './eager-iterator';
 import { inOrder, memoize } from './stateful-functions';
 import { existsSync } from 'fs';
@@ -58,15 +60,15 @@ if (existsSync('../client/dist')) {
   app.use(staticFileMiddleware);
 }
 
-/**
- * @template T
- * @param {T[]} array
- * @param {number} n
- * @returns {Generator<T[]>}
- */
 function* chunkArray<T>(array: T[], n: number = 10): Generator<T[]> {
   for (let i = 0; i < array.length; i += n) {
     yield array.slice(i, i + n);
+  }
+}
+
+async function* chunkAsync<T>(array: Promise<T>[], n: number = 10): AsyncGenerator<T[]> {
+  for (let i = 0; i < array.length; i += n) {
+    yield Promise.all(array.slice(i, i + n));
   }
 }
 
@@ -88,7 +90,7 @@ function formatDateWithLineBreak(date: moment.MomentInput, locales: string | str
   return splitFormat.map((line) => dateMoment.format(line));
 }
 
-function convertActivity(
+function convertActivitySummary(
   { id, name, start_date_local: date, map: { summary_polyline: map }, type },
   locales: string | string[] = ['en'],
 ): Activity {
@@ -100,6 +102,46 @@ function convertActivity(
     type,
     dateString: formatDateWithLineBreak(date, locales),
   };
+}
+
+function convertRouteSummary(
+  { id, name, created_at: date, map: { summary_polyline: map }, type, sub_type: subType },
+  locales: string | string[] = ['en'],
+): Route {
+  return {
+    id,
+    name,
+    date,
+    map,
+    type: ([, 'Ride', 'Run'] as const)[type],
+    subType: ([, 'Road', 'MountainBike', 'Cross', 'Trail', 'Mixed'] as const)[subType],
+    dateString: formatDateWithLineBreak(date, locales),
+  };
+}
+
+function convertActivity({ id, map }, highDetail = false): ActivityMap {
+  try {
+    return { id, map: highDetail ? map.polyline : map.summary_polyline };
+  } catch (e) {
+    if (!map) {
+      console.error('No map for activity', id);
+      return { id, map: '' };
+    } else throw e;
+  }
+}
+
+/**
+ * Sort promises by execution time, instantly.
+ */
+function sortPromises<T>(promises: Promise<T>[]): Promise<T>[] {
+  const sorted: Promise<T>[] = [];
+  const resolvers: ((value: T) => void)[] = [];
+  let resolved = 0;
+  promises.forEach((promise) => {
+    sorted.push(new Promise((resolve) => resolvers.push(resolve)));
+    promise.then((value) => resolvers[resolved++](value));
+  });
+  return sorted;
 }
 
 /** @type {Activity[]} */
@@ -132,21 +174,20 @@ router.ws('/activities', async (ws, req) => {
       const activities = [];
 
       // eslint-disable-next-line no-restricted-syntax
-      for await (const page of eagerIterator(getStravaActivityPages(start, end))) {
+      for await (const page of eagerIterator(getStravaActivitiesPages(start, end))) {
         if (!live) return;
 
         stats.finding.length = activities.length + page.length;
         sendStats();
 
         const newActivities = page
-          .map((activity) => convertActivity(activity as any, locales))
+          .map((activity) => convertActivitySummary(activity as any, locales))
           .filter((activity) => activity.map);
         activities.push(...newActivities);
         yield newActivities;
       }
-      cachedActivities = activities;
+      // cachedActivities = activities;
     } else {
-      stats.finding.started = true;
       stats.finding.length = cachedActivities.length;
       sendStats();
       yield cachedActivities;
@@ -154,26 +195,58 @@ router.ws('/activities', async (ws, req) => {
     stats.finding.finished = true;
   }
 
-  const sendMaps: (input?: { id: number; map: string }[]) => Promise<void> = inOrder(
-    async (activities = []) => {
-      // eslint-disable-next-line no-restricted-syntax
-      for (const chunk of chunkArray(activities, 50)) {
-        // eslint-disable-next-line no-await-in-loop
-        await tick();
-        if (!live) return;
-        const maps = Object.fromEntries(chunk.map(({ id, map }) => [id, map]));
-        ws.send(JSON.stringify({ type: 'maps', chunk: maps } as ResponseMessage));
-      }
+  /**
+   * Fetches your routes from the Strava API
+   */
+  async function* routesIterator(): AsyncGenerator<Route[]> {
+    const routes = [];
+
+    // eslint-disable-next-line no-restricted-syntax
+    for await (const page of eagerIterator(getStravaRoutesPages())) {
+      if (!live) return;
+
+      stats.finding.length = routes.length + page.length;
       sendStats();
-    },
-  );
+
+      const newRoutes = page
+        .map((route) => convertRouteSummary(route as any, locales))
+        .filter((route) => route.map);
+      routes.push(...newRoutes);
+      yield newRoutes;
+    }
+
+    stats.finding.finished = true;
+  }
+
+  const sendMaps = inOrder(async (activities: number[]) => {
+    const activityMaps = sortPromises(
+      activities.map(async (id) => {
+        const highDetail = false;
+        await tick();
+        let map = fetchedMaps.get(id);
+        if (map) fetchedMaps.delete(id);
+        if (map && !highDetail) return [id, map];
+        else map = convertActivity((await getActivity(id)) as any, highDetail).map;
+        return [id, map];
+      }),
+    );
+    for await (const chunk of chunkAsync(activityMaps, 50)) {
+      // eslint-disable-next-line no-await-in-loop
+      if (!live) return;
+      const maps = Object.fromEntries(chunk);
+      ws.send(JSON.stringify({ type: 'maps', chunk: maps } as ResponseMessage));
+    }
+    sendStats();
+  });
 
   ws.on('message', async (data) => {
     const message: RequestMessage = JSON.parse(data.toString());
 
-    if (message.load) {
+    if (message.activities) {
+      stats.finding.started = true;
+
       // eslint-disable-next-line no-restricted-syntax
-      for (const { start, end } of TimeRange.cap(message.load)) {
+      for (const { start, end } of TimeRange.cap(message.activities)) {
         sendStats();
         // eslint-disable-next-line no-restricted-syntax, no-await-in-loop
         for await (const activities of activitiesIterator(start, end)) {
@@ -195,13 +268,31 @@ router.ws('/activities', async (ws, req) => {
       }
     }
 
+    if (message.routes) {
+      stats.finding.started = true;
+
+      sendStats();
+      // eslint-disable-next-line no-restricted-syntax, no-await-in-loop
+      for await (const routes of routesIterator()) {
+        if (!live) return;
+        routes.forEach(({ map, id }) => {
+          fetchedMaps.set(id, map);
+        });
+        ws.send(
+          JSON.stringify({
+            type: 'routes',
+            routes: routes.map(({ map, ...routes }) => routes),
+          } as ResponseMessage),
+        );
+        sendStats();
+      }
+
+      if (!live) return;
+      sendStats();
+    }
+
     if (message.maps) {
-      const mapsToSend = message.maps.map((id) => {
-        const map = fetchedMaps.get(id);
-        fetchedMaps.delete(id);
-        return { id, map };
-      });
-      sendMaps(mapsToSend);
+      sendMaps(message.maps);
     }
   });
 

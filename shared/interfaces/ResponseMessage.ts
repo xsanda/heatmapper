@@ -1,8 +1,13 @@
 import Activity from './Activity';
+import Route from './Route';
 
 interface ActivitiesMessage {
   type: 'activities';
   activities: Activity[];
+}
+interface RoutesMessage {
+  type: 'routes';
+  routes: Route[];
 }
 interface MapsMessage {
   type: 'maps';
@@ -14,6 +19,10 @@ export interface StatsMessage {
   finding: { started: boolean; finished: boolean; length: number };
 }
 
-type ResponseMessage = ActivitiesMessage | MapsMessage | StatsMessage;
+type ResponseMessage =
+  | ActivitiesMessage
+  | MapsMessage
+  | StatsMessage
+  | RoutesMessage;
 
 export default ResponseMessage;

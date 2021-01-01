@@ -20,15 +20,11 @@
       </label>
     </div>
     <div class="buttons">
-      <button @click="sockets">
-        Load
-      </button>
-      <button @click="clearCache">
-        Clear cache
-      </button>
-      <button @click="$emit('toggle:improved-hillshade')">
-        Toggle hillshade
-      </button>
+      <button @click="load">Load</button>
+      <button @click="loadPartial">Load Partial</button>
+      <button @click="loadRoutes">Routes</button>
+      <button @click="clearCache">Clear cache</button>
+      <button @click="$emit('toggle:improved-hillshade')">Toggle hillshade</button>
     </div>
     <p :class="[error && 'error']">
       {{ statusMessage }}
@@ -39,9 +35,17 @@
 <script lang="ts">
 import { Component, Vue, PropSync, Prop, Watch, Ref } from 'vue-property-decorator';
 
-import { Activity, RequestMessage, ResponseMessage, TimeRange } from '../../../shared/interfaces';
+import {
+  Activity,
+  RequestMessage,
+  ResponseMessage,
+  TimeRange,
+  Route,
+  XOR,
+} from '../../../shared/interfaces';
 import DateInput from './DateInput.vue';
 import activityTypes from '../activityTypes';
+import Socket from '../socket';
 
 interface ActivityStore {
   covered: TimeRange[];
@@ -61,10 +65,14 @@ function count(n: number, singular: string, plural?: string): string {
 
 const countActivities = (n: number) => count(n, 'activity', 'activities');
 
-function findingString({ finished = false, length = 0 } = {}, inCache = false) {
+function findingString(
+  { started = false, finished = false, length = 0 }: Form['stats']['finding'] = {},
+  inCache = false,
+) {
   if (finished && inCache) return `found ${countActivities(length)} in cache`;
   if (finished) return `found ${countActivities(length)}`;
   if (length) return `found ${countActivities(length)} so far`;
+  if (started) return 'finding activities';
   return '';
 }
 
@@ -140,7 +148,6 @@ function filterActivities(
 ): Activity[] {
   const startString = start && new Date(start).toISOString();
   const endString = end && new Date(end).toISOString();
-  console.log({ startString, endString });
   return activities.filter((activity) =>
     [
       !type || type.split(',').includes(activity.type),
@@ -148,6 +155,15 @@ function filterActivities(
       !endString || endString.localeCompare(activity.date) >= 0,
     ].every(Boolean),
   );
+}
+
+function filterRoutes(
+  routes: Route[],
+  type?: string,
+  start?: Date | null,
+  end?: Date | null,
+): Activity[] {
+  return routes.filter((route) => [!type || type.split(',').includes(route.type)].every(Boolean));
 }
 
 @Component({
@@ -164,7 +180,7 @@ export default class Form extends Vue {
 
   stats: {
     status?: string;
-    finding?: { finished?: boolean; length?: number };
+    finding?: { started?: boolean; finished?: boolean; length?: number };
     cleared?: boolean;
   } = {};
 
@@ -176,6 +192,8 @@ export default class Form extends Vue {
   };
 
   error: string | null = null;
+
+  starting = false;
 
   get statusMessage() {
     return this.error || this.statsMessage();
@@ -212,21 +230,19 @@ export default class Form extends Vue {
     this.$emit('add-activity-maps', maps);
   }
 
-  requestMaps(ids: number[], socket?: WebSocket) {
+  requestMaps(ids: number[], socket?: Socket) {
     this.clientStats.mapsRequested += ids.length;
     const { cached, notCached } = getCachedMaps(ids);
     if (socket && notCached.length) {
-      socket.send(
-        JSON.stringify({
-          maps: notCached,
-        }),
-      );
+      socket.sendRequest({
+        maps: notCached,
+      });
     }
     this.receiveMaps(cached);
     this.checkFinished(socket);
   }
 
-  receiveActivities(activities: Activity[], socket?: WebSocket) {
+  receiveActivities(activities: Activity[], socket?: Socket) {
     const filteredActivities = filterActivities(
       activities,
       this.activityType,
@@ -240,12 +256,23 @@ export default class Form extends Vue {
     );
   }
 
-  checkFinished(socket?: WebSocket) {
+  receiveRoutes(routes: Route[], socket?: Socket) {
+    const filteredRoutes = filterRoutes(routes, this.activityType);
+    this.$emit('add-activities', filteredRoutes);
+    this.requestMaps(
+      filteredRoutes.map(({ id }) => id),
+      socket,
+    );
+  }
+
+  checkFinished(socket?: Socket) {
     if (
       socket &&
+      !this.starting &&
       this.clientStats.mapsRequested === this.clientStats.mapsLoaded &&
       this.stats.finding?.finished
     ) {
+      console.log('Closing socket', socket.id);
       socket.close();
     }
   }
@@ -260,75 +287,116 @@ export default class Form extends Vue {
     }
   }
 
-  startLoading(socket: WebSocket, start?: number, end?: number) {
-    clearCachedActivities();
-    this.clientStats.inCache = false;
-    socket.send(
-      JSON.stringify({
-        // load a single range covering all time
-        load: [{ start, end }],
-      } as RequestMessage),
-    );
+  startLoading(socket: Socket, ranges: TimeRange[]) {
+    console.log(ranges);
+    socket.sendRequest({
+      activities: ranges,
+    });
   }
 
-  async sockets() {
+  startLoadingRoutes(socket: Socket) {
+    socket.sendRequest({
+      routes: true,
+    });
+  }
+
+  async load() {
+    await this.sockets();
+  }
+
+  async loadPartial() {
+    await this.sockets({ partial: true });
+  }
+
+  async loadRoutes() {
+    await this.sockets({ routes: true });
+  }
+
+  async sockets({
+    partial = false,
+    routes = false,
+  }: XOR<[{ partial?: boolean }, { routes?: boolean }]> = {}) {
     this.$emit('clear-activities', this);
-    this.clientStats.mapsLoaded = 0;
-    this.clientStats.mapsRequested = 0;
+    this.clientStats = {
+      mapsRequested: 0,
+      mapsLoaded: 0,
+      mapsNotCached: 0,
+      inCache: false,
+    };
     this.error = null;
 
-    // TODO: don’t open if not needed
-    const socket = new WebSocket(`ws://${window.location.host}/api/activities`);
-    let errored = false;
-
     const start = this.start ? this.start.getTime() / 1000 : 0;
-    const end = this.end ? this.end.getTime() / 1000 : Date.now();
+    const end = (this.end ? this.end.getTime() : Date.now()) / 1000;
 
-    const checkFinished = () => {
-      if (
-        this.clientStats.mapsRequested === this.clientStats.mapsLoaded &&
-        this.stats.finding?.finished
-      ) {
-        socket.close();
-      }
-    };
+    let latestActivityDate = start;
 
-    socket.onerror = () => {
-      errored = true;
-      this.setError('Error fetching activities');
-    };
-    socket.onopen = () => {
-      this.startLoading(socket /* , start, end */);
-    };
-    socket.onmessage = (message) => {
-      const data: ResponseMessage = JSON.parse(message.data);
-      switch (data.type) {
-        case 'stats': {
-          const oldStats = this.stats;
-          this.stats = data;
-          if (!oldStats?.finding?.finished && data.finding.finished) {
-            appendCachedActivities([], end, start);
+    const socket = new Socket(
+      `ws://${window.location.host}/api/activities`,
+      (message) => {
+        const data: ResponseMessage = JSON.parse(message.data);
+        switch (data.type) {
+          case 'stats': {
+            const oldStats = this.stats;
+            this.stats = data;
+            if (!oldStats?.finding?.finished && data.finding.finished) {
+              appendCachedActivities([], latestActivityDate, start);
+            }
+            break;
           }
-          break;
+          case 'activities': {
+            const activityCount = data.activities.length;
+            if (activityCount === 0) break;
+            this.receiveActivities(data.activities, socket);
+
+            // API returns in descending order
+            const latestDate = new Date(data.activities[0].date).getTime() / 1000;
+            const earliestDate = new Date(data.activities[activityCount - 1].date).getTime() / 1000;
+            latestActivityDate = Math.max(latestActivityDate, latestDate);
+            appendCachedActivities(data.activities, latestDate, earliestDate);
+            break;
+          }
+          case 'routes': {
+            const routeCount = data.routes.length;
+            if (routeCount === 0) break;
+            this.receiveRoutes(data.routes, socket);
+            break;
+          }
+          case 'maps': {
+            saveCachedMaps(data.chunk);
+            this.receiveMaps(data.chunk);
+            break;
+          }
+          default:
+            console.log(`Unknown message ${data}`);
         }
-        case 'activities':
-          this.receiveActivities(data.activities, socket);
-          appendCachedActivities(data.activities, end);
-          break;
-        case 'maps':
-          saveCachedMaps(data.chunk);
-          this.receiveMaps(data.chunk);
-          break;
-        default:
-          console.log(`Unknown message ${data}`);
+        this.checkFinished(socket);
+      },
+      (errored) => {
+        if (errored) {
+          this.setError('Error fetching activities');
+        } else {
+          this.stats = { status: 'disconnected' };
+        }
+      },
+    );
+
+    if (routes) {
+      this.startLoadingRoutes(socket);
+    } else {
+      this.starting = true;
+
+      let ranges: TimeRange[];
+      if (partial) {
+        const { covered, activities } = getActivityStore();
+        ranges = TimeRange.cap(TimeRange.invert(covered), start ?? 0, end);
+        this.receiveActivities(activities, socket);
+      } else {
+        ranges = [{ start, end }];
       }
-      checkFinished();
-    };
-    socket.onclose = () => {
-      if (!errored) {
-        this.stats = { status: 'disconnected' };
-      }
-    };
+
+      this.startLoading(socket, ranges);
+      this.starting = false;
+    }
   }
 }
 </script>
@@ -352,6 +420,7 @@ export default class Form extends Vue {
 aside > .buttons {
   margin: 5px auto;
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-evenly;
 }
 

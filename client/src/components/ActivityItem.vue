@@ -75,12 +75,13 @@ export default class ActivityItem extends Vue {
     width: $size;
     display: flex;
     overflow: hidden;
-    flex-direction: row;
-    align-items: center;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: center;
     padding-right: 8px;
 
     > img {
-      flex: 0 0 100%;
+      flex: 0 0 $size;
     }
 
     &:hover > img:first-child {

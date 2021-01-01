@@ -50,7 +50,10 @@ export default class App extends Vue {
   }
 
   addActivities(activities: Activity[]) {
-    this.activities.push(...activities);
+    const newIDs = new Set(activities.map((activity) => activity.id));
+    this.activities = this.activities
+      .filter((activity) => !newIDs.has(activity.id) || console.log('Duplicate:', activity))
+      .concat(activities);
   }
 
   addActivityMaps(maps: never) {

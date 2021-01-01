@@ -8,10 +8,29 @@
  * @param fn The function to memoize.
  * @returns The memoized function.
  */
-export const memoize = <T>(fn: (arg: string) => T): ((arg: string) => T) => {
-  const memo = {};
-  return (arg) => memo[arg] || (memo[arg] = fn(arg));
-};
+export function memoize<T>(fn: () => T): () => T;
+export function memoize<T>(fn: (arg: string) => T): (arg: string) => T;
+export function memoize<T>(fn: (...args: any[]) => T): (...args: any[]) => T {
+  switch (fn.length) {
+    case 0: {
+      let memoed = false;
+      let memo: T = undefined;
+      return () => {
+        if (!memoed) {
+          memo = fn();
+          memoed = true;
+        }
+        return memo;
+      };
+    }
+    case 1: {
+      const memo = {};
+      return (arg) => memo[arg] || (memo[arg] = fn(arg));
+    }
+    default:
+      throw new Error('Invalid parity of memoized function, 0 or 1 expected');
+  }
+}
 
 /**
  * Add a mutex to an async function, so any calls wait until previous calls

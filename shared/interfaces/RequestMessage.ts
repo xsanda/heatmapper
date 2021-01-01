@@ -1,6 +1,7 @@
 import TimeRange from './TimeRange';
 
 export default interface RequestMessage {
-  load?: TimeRange[];
+  activities?: TimeRange[];
+  routes?: true;
   maps?: number[];
 }
