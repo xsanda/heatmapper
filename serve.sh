@@ -29,6 +29,12 @@ wrap() {
     escape wrapper "$@"
 }
 
+if ! command -v tmux &> /dev/null
+then
+    echo "Please install tmux to continue" >&2
+    exit 1
+fi
+
 cd "${0%/*}"
 
 # wrap yarn serve
