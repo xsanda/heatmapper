@@ -8,7 +8,10 @@ import Activity from '../../../shared/interfaces/Activity';
 
 declare global {
   interface Window {
+    // eslint-disable-next-line no-use-before-define
     cachedMapComponent?: Map;
+
+    GeoJSON: any;
   }
 }
 
