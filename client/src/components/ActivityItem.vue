@@ -78,6 +78,7 @@ export default class ActivityItem extends Vue {
 
     > img {
       flex: 0 0 $size;
+      height: $size;
     }
 
     &:hover > img:first-child {
