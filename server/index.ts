@@ -22,7 +22,7 @@ import {
 import { Strava, tokenExchange } from './strava';
 import eagerIterator, { tick } from './eager-iterator';
 import { inOrder, memoize } from './stateful-functions';
-import { stringify, validate as validateUUID } from 'uuid';
+import { validate as validateUUID } from 'uuid';
 
 dotenv.config();
 
@@ -31,6 +31,7 @@ expressWs(app);
 app.use(cookieParser());
 const port = 3000;
 const router = express.Router();
+const domain = process.env.DOMAIN || `http://localhost:${port}`;
 
 app.use(bodyParser.json());
 
@@ -142,7 +143,7 @@ router.ws('/activities', (ws, req) => {
     send({ type: 'login', cookie: token, url });
   }
 
-  let strava = new Strava(port, req.cookies['token'], requestLogin);
+  let strava = new Strava(domain, req.cookies['token'], requestLogin);
 
   let live = true;
   const stats: StatsMessage = {

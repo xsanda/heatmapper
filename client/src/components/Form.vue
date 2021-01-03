@@ -59,6 +59,7 @@ function count(n: number, singular: string, plural?: string): string {
 const countActivities = (n: number) => count(n, 'activity', 'activities');
 
 function findingString(
+  // eslint-disable-next-line no-use-before-define
   { started = false, finished = false, length = 0 }: Form['stats']['finding'] = {},
   inCache = false,
 ) {
@@ -329,8 +330,9 @@ export default class Form extends Vue {
 
     let latestActivityDate = start;
 
+    const protocol = location.protocol.includes('https') ? 'wss' : 'ws';
     const socket = new Socket(
-      `ws://${window.location.host}/api/activities`,
+      `${protocol}://${window.location.host}/api/activities`,
       (message) => {
         const data: ResponseMessage = JSON.parse(message.data);
         switch (data.type) {

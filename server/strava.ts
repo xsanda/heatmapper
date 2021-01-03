@@ -56,12 +56,12 @@ interface Cache {
 }
 
 export class Strava {
-  private port: number;
+  private domain: string;
   private requestLogin: (token: string, url: string) => Promise<void>;
   private token: string;
 
-  constructor(port: number, token: string | undefined, requestLogin: (token: string, url: string) => Promise<void>) {
-    this.port = port;
+  constructor(domain: string, token: string | undefined, requestLogin: (token: string, url: string) => Promise<void>) {
+    this.domain = domain;
     this.token = token && validateUUID(token) ? token : uuid();
     this.requestLogin = requestLogin;
   }
@@ -196,7 +196,7 @@ export class Strava {
 
     await this.requestLogin(
       this.token,
-      `http://www.strava.com/oauth/authorize?client_id=${stravaClientId}&response_type=code&redirect_uri=http://localhost:${this.port}/api/token&state=${this.token}&approval_prompt=auto&scope=read_all,profile:read_all,activity:read_all`,
+      `http://www.strava.com/oauth/authorize?client_id=${stravaClientId}&response_type=code&redirect_uri=${this.domain}/api/token&state=${this.token}&approval_prompt=auto&scope=read_all,profile:read_all,activity:read_all`,
     );
 
     await athleteInfoPromise.then(
