@@ -9,7 +9,7 @@ import { Component, Vue, Prop, Ref } from 'vue-property-decorator';
 export default class InputDate extends Vue {
   @Prop({ default: null }) value!: Date;
 
-  @Prop({ default: undefined }) name?: String;
+  @Prop({ default: undefined }) name?: string;
 
   @Ref() input!: HTMLInputElement;
 

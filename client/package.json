@@ -25,7 +25,7 @@
   "devDependencies": {
     "@types/mapbox-gl": "^1.11.1",
     "@types/mapbox__polyline": "^1.0.0",
-    "@typescript-eslint/eslint-plugin": "^3.7.1",
+    "@typescript-eslint/eslint-plugin": "^4.11.1",
     "@typescript-eslint/parser": "^4.11.1",
     "@vue/cli": "^4.5.6",
     "@vue/cli-plugin-babel": "~4.4.0",
@@ -36,7 +36,7 @@
     "@vue/eslint-config-typescript": "^5.0.2",
     "@vue/runtime-dom": "latest",
     "babel-eslint": "^10.1.0",
-    "eslint": "^6.7.2",
+    "eslint": "^7.17.0",
     "eslint-config-prettier": "^6.11.0",
     "eslint-plugin-babel": "^5.3.0",
     "eslint-plugin-import": "^2.20.2",
@@ -46,7 +46,7 @@
     "sass": "^1.22.10",
     "sass-loader": "^8.0.2",
     "ts-loader": "^8.0.1",
-    "typescript": "^3.9.7",
+    "typescript": "^4.1.3",
     "vue-template-compiler": "^2.6.11",
     "webpack": "^4.43.0"
   },
@@ -66,13 +66,15 @@
       "plugin:vue/strongly-recommended",
       "eslint:recommended",
       "plugin:prettier/recommended",
+      "plugin:@typescript-eslint/recommended",
       "@vue/airbnb",
       "prettier",
       "prettier/vue"
     ],
     "plugins": [
       "prettier",
-      "babel"
+      "babel",
+      "@typescript-eslint/eslint-plugin"
     ],
     "parser": "vue-eslint-parser",
     "parserOptions": {
@@ -97,8 +99,10 @@
       "vue/max-attributes-per-line": "off",
       "vue/custom-event-name-casing": "off",
       "no-unused-expressions": "off",
-      "babel/no-unused-expressions": "error",
+      "@typescript-eslint/no-unused-expressions": "error",
       "no-unused-vars": "off",
+      "no-restricted-syntax": "off",
+      "no-undef": "off",
       "class-methods-use-this": "off",
       "no-underscore-dangle": [
         "warn",

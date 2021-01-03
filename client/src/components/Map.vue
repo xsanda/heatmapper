@@ -1,8 +1,7 @@
 <script lang="tsx">
 import { Component, Vue, PropSync, Prop, Watch, Ref } from 'vue-property-decorator';
 
-import * as mapboxgl from 'mapbox-gl';
-import { LngLatBounds } from 'mapbox-gl';
+import mapboxgl, { LngLatBounds } from 'mapbox-gl';
 import polyline from '@mapbox/polyline';
 import Activity from '../../../shared/interfaces/Activity';
 
@@ -10,8 +9,6 @@ declare global {
   interface Window {
     // eslint-disable-next-line no-use-before-define
     cachedMapComponent?: Map;
-
-    GeoJSON: any;
   }
 }
 
@@ -297,5 +294,6 @@ export default class Map extends Vue {
 
 .mapboxgl-canvas {
   cursor: pointer;
+  outline: none;
 }
 </style>

@@ -119,19 +119,15 @@ function appendCachedActivities(activities: Activity[], end: number, start?: num
   localStorage.setItem('activities', JSON.stringify(newStore));
 }
 
-function clearCachedActivities() {
-  localStorage.removeItem('activities');
-}
-
 function getCachedMaps(ids: number[]) {
   const notCached: number[] = [];
 
   const cached: Record<string, string> = {};
-  ids.flatMap((id) => {
+  for (const id of ids) {
     const fromCache = getCachedMap(id);
     if (fromCache) cached[id] = fromCache;
     else notCached.push(id);
-  });
+  }
   return { cached, notCached };
 }
 

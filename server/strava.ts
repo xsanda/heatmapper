@@ -162,7 +162,7 @@ export class Strava {
         delete cache.stravaAccessToken;
       });
       this.getStravaToken();
-    }, 1000 * 60 * 60);
+    }, 1000 * 60);
 
     return cache.stravaAccessToken;
   }
