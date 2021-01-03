@@ -143,12 +143,10 @@ export class Strava {
       expires_at: number;
       refresh_token: string;
       access_token: string;
-      athlete: { id: number };
+      athlete?: { id: number };
     } = await res.json();
-    if (!data.athlete) {
-      throw new Error('Invalid data after token request: ' + JSON.stringify(data));
-    }
-    const stravaAthlete = data.athlete.id;
+
+    const stravaAthlete = data.athlete?.id;
 
     const cache = await this.updateFile(sessionCacheFile(this.token), { stravaAthlete }, (cache: Cache) => ({
       ...cache,
