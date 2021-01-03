@@ -194,7 +194,7 @@ export class Strava {
 
     await this.requestLogin(
       this.token,
-      `http://www.strava.com/oauth/authorize?client_id=${stravaClientId}&response_type=code&redirect_uri=${this.domain}/api/token&state=${this.token}&approval_prompt=auto&scope=read_all,profile:read_all,activity:read_all`,
+      `http://www.strava.com/oauth/authorize?client_id=${stravaClientId}&response_type=code&redirect_uri=${this.domain}/api/token&state=${this.token}&approval_prompt=auto&scope=read_all,activity:read_all`,
     );
 
     await athleteInfoPromise.then(
