@@ -1,6 +1,6 @@
 export default interface Route {
   route: true;
-  id: number;
+  id: string;
   name: string;
   date: number;
   map: string;

@@ -90,12 +90,12 @@ function convertActivitySummary(
 }
 
 function convertRouteSummary(
-  { id, name, created_at: date, map: { summary_polyline: map }, type, sub_type: subType },
+  { id_str, name, created_at: date, map: { summary_polyline: map }, type, sub_type: subType },
   locales: string | string[] = ['en'],
 ): Route {
   return {
     route: true,
-    id,
+    id: id_str,
     name,
     date,
     map,
@@ -135,7 +135,7 @@ router.ws('/activities', (ws, req) => {
     ws.send(JSON.stringify(data));
   }
 
-  const fetchedMaps: Map<number, string> = new Map();
+  const fetchedMaps: Map<string, string> = new Map();
 
   const locales = req.acceptsLanguages();
 
@@ -202,7 +202,7 @@ router.ws('/activities', (ws, req) => {
     stats.finding.finished = true;
   }
 
-  const sendMaps = inOrder(async (activities: number[]) => {
+  const sendMaps = inOrder(async (activities: string[]) => {
     const activityMaps = sortPromises(
       activities.map(async (id) => {
         const highDetail = false;
@@ -235,7 +235,7 @@ router.ws('/activities', (ws, req) => {
         for await (const activities of activitiesIterator(start, end)) {
           if (!live) return;
           activities.forEach(({ map, id }) => {
-            fetchedMaps.set(id, map);
+            fetchedMaps.set(id.toString(), map);
           });
           send({
             type: 'activities',

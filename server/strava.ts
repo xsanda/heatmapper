@@ -313,7 +313,7 @@ export class Strava {
     }
   }
 
-  async getActivity(id: number): Promise<unknown> {
+  async getActivity(id: number | string): Promise<unknown> {
     return await this.stravaAPI(`/activities/${id}`);
   }
 }

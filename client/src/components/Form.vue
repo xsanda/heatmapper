@@ -119,22 +119,16 @@ function appendCachedActivities(activities: Activity[], end: number, start?: num
   localStorage.setItem('activities', JSON.stringify(newStore));
 }
 
-function getCachedMaps(ids: number[]) {
-  const notCached: number[] = [];
+function getCachedMaps(ids: (string | number)[]) {
+  const notCached: string[] = [];
 
   const cached: Record<string, string> = {};
   for (const id of ids) {
     const fromCache = getCachedMap(id);
     if (fromCache) cached[id] = fromCache;
-    else notCached.push(id);
+    else notCached.push(id.toString());
   }
   return { cached, notCached };
-}
-
-function queryString(params: Record<string, string>) {
-  const qs = new URLSearchParams();
-  Object.keys(params).forEach((key) => qs.append(key, params[key]));
-  return qs.toString();
 }
 
 const nonEmpties = (...args: string[]) => args.filter(Boolean);
@@ -237,7 +231,7 @@ export default class Form extends Vue {
     this.loadFromCache();
   }
 
-  requestMaps(ids: number[], socket?: Socket) {
+  requestMaps(ids: (number | string)[], socket?: Socket) {
     this.clientStats.mapsRequested += ids.length;
     const { cached, notCached } = getCachedMaps(ids);
     if (socket && notCached.length) {
