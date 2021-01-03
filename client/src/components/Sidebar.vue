@@ -53,7 +53,10 @@ function getRange(activities: Activity[], to: number, from?: number | number[]):
 }
 
 function cancelTextSelection() {
-  window.getSelection?.()?.removeAllRanges();
+  if (window.getSelection) {
+    const selection = window.getSelection();
+    if (selection) selection?.removeAllRanges;
+  }
 }
 
 @Component({
