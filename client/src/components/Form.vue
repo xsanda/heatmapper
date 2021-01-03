@@ -28,7 +28,13 @@
       <button @click="loadRoutes">Routes</button>
       <button @click="clearCache">Clear cache</button>
     </div>
-    <p :class="[error && 'error']" v-text="statusMessage" />
+    <div v-if="continueLogin" class="not-logged-in">
+      <p>You are not logged in. Click to continue to log in with Strava.</p>
+      <div class="centered">
+        <button @click="continueLogin && continueLogin()">Log in</button>
+      </div>
+    </div>
+    <p v-else :class="[error && 'error']" v-text="statusMessage" />
   </aside>
 </template>
 
@@ -169,6 +175,8 @@ export default class Form extends Vue {
   start: Date | null = null;
 
   end: Date | null = null;
+
+  continueLogin: null | (() => void) = null;
 
   activityType = '';
 
@@ -330,7 +338,7 @@ export default class Form extends Vue {
 
     let latestActivityDate = start;
 
-    const protocol = location.protocol.includes('https') ? 'wss' : 'ws';
+    const protocol = window.location.protocol.includes('https') ? 'wss' : 'ws';
     const socket = new Socket(
       `${protocol}://${window.location.host}/api/activities`,
       (message) => {
@@ -368,13 +376,10 @@ export default class Form extends Vue {
             break;
           }
           case 'login': {
-            // eslint-disable-next-line no-restricted-globals
-            const shouldLogin = confirm(
-              'You are not logged in. Press OK to continue to log in with Strava.',
-            );
-            if (shouldLogin) {
+            this.continueLogin = () => {
+              this.continueLogin = null;
               window.open(data.url, 'menubar=false,toolbar=false,width=300, height=300');
-            }
+            };
             break;
           }
           default:
@@ -437,5 +442,20 @@ aside > .buttons {
 
 .error {
   color: red;
+}
+
+.not-logged-in {
+  background-color: var(--background-strong);
+  border-radius: 1em;
+  margin: 1em;
+  padding: 1em;
+
+  p {
+    margin-top: 0;
+  }
+
+  .centered {
+    text-align: center;
+  }
 }
 </style>
