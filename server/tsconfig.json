@@ -1,13 +1,19 @@
 {
   "compilerOptions": {
-    "lib": ["es2020"],
-    "types": ["node"],
+    "lib": [
+      "es2020"
+    ],
+    "types": [
+      "node"
+    ],
+    "target": "es2020",
     "noEmit": true,
     "allowJs": true,
     "esModuleInterop": true,
     "downlevelIteration": true,
     "moduleResolution": "node",
     "outDir": "dist",
-    "declaration": true
+    "declaration": true,
+    "strictNullChecks": true
   }
 }

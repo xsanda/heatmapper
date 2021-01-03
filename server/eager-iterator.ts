@@ -1,37 +1,16 @@
-// @ts-check
+interface RecursiveIterator<T> {
+  next: IteratorResult<T>;
+  nextIterator?: Promise<RecursiveIterator<T>>;
+}
 
-/**
- * @template T return value
- * @typedef {Object} RecursiveIterator
- * @property {IteratorResult<T>} next
- * @property {Promise<RecursiveIterator<T>>=} nextIterator
- */
-/**
- * @param {number} delay
- * @returns {Promise<void>}
- */
-export const sleep = (delay) => new Promise((resolve) => setTimeout(resolve, delay));
+export const sleep = (delay: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, delay));
 
-/**
- * @returns {Promise<void>}
- */
-export const tick = () => sleep(0);
+export const tick = (): Promise<void> => sleep(0);
 
-/**
- *
- * @template T return value
- * @param {AsyncIterable<T>} asyncIterable
- * @returns {AsyncIterableIterator<T>}
- */
-const eagerIterator = (asyncIterable) => {
+const eagerIterator = <T>(asyncIterable: AsyncIterable<T>): AsyncIterableIterator<T> => {
   let returned = false;
-  /**
-   *
-   * @template T return value
-   * @param {AsyncIterator<T>} asyncIterator
-   * @returns {Promise<RecursiveIterator<T>>}
-   */
-  const eagerIteratorStep = async (asyncIterator) => {
+
+  const eagerIteratorStep = async <T>(asyncIterator: AsyncIterator<T>): Promise<RecursiveIterator<T>> => {
     if (returned) return { next: { done: true, value: undefined } };
     await tick();
     const next = await asyncIterator.next();
@@ -44,9 +23,7 @@ const eagerIterator = (asyncIterable) => {
     async next() {
       if (returned) return { done: true, value: undefined };
       const currentIteratorPromise = iteratorPromise;
-      iteratorPromise = currentIteratorPromise.then(
-        (currentIterator) => currentIterator.nextIterator,
-      );
+      iteratorPromise = currentIteratorPromise.then((currentIterator) => currentIterator.nextIterator!);
       const { next } = await currentIteratorPromise;
       if (next.done) returned = true;
       return next;

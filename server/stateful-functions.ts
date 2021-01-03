@@ -13,14 +13,12 @@ export function memoize<T>(fn: (arg: string) => T): (arg: string) => T;
 export function memoize<T>(fn: (...args: any[]) => T): (...args: any[]) => T {
   switch (fn.length) {
     case 0: {
-      let memoed = false;
-      let memo: T = undefined;
+      let memo: { calculated: true; value: T } | { calculated: false } = { calculated: false };
       return () => {
-        if (!memoed) {
-          memo = fn();
-          memoed = true;
+        if (!memo.calculated) {
+          memo = { calculated: true, value: fn() };
         }
-        return memo;
+        return memo.value;
       };
     }
     case 1: {
@@ -35,9 +33,7 @@ export function memoize<T>(fn: (...args: any[]) => T): (...args: any[]) => T {
 /**
  * Add a mutex to an async function, so any calls wait until previous calls
  */
-export const inOrder = <T extends any[], R = void>(
-  fn: (...args: T) => Promise<R>,
-): ((...args: T) => Promise<R>) => {
+export const inOrder = <T extends any[], R = void>(fn: (...args: T) => Promise<R>): ((...args: T) => Promise<R>) => {
   let lastItem = Promise.resolve();
   return (...args) => lastItem.catch(() => undefined).then(() => fn(...args));
 };

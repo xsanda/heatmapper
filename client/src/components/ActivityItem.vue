@@ -9,12 +9,7 @@
       <Spinner size="tiny" line-fg-color="#888" />
     </div>
     <div class="date" v-text="activity.dateString.join('\n')" />
-    <a
-      :href="'https://www.strava.com/activities/' + activity.id"
-      target="_blank"
-      @click="$event.stopPropagation()"
-      class="strava-link"
-    >
+    <a :href="url" target="_blank" @click="$event.stopPropagation()" class="strava-link">
       <img src="@/assets/strava_symbol_gray.png" />
       <img src="@/assets/strava_symbol_orange.png" />
     </a>
@@ -24,15 +19,20 @@
 <script lang="ts">
 import { Component, Vue, Prop } from 'vue-property-decorator';
 import Spinner from 'vue-simple-spinner';
-import Activity from '../../../shared/interfaces/Activity';
+import { Route, Activity } from '../../../shared/interfaces';
 
 @Component({
   components: { Spinner },
 })
 export default class ActivityItem extends Vue {
-  @Prop({ required: true }) activity!: Activity;
+  @Prop({ required: true }) activity!: Activity | Route;
 
   @Prop({ default: false }) selected!: boolean;
+
+  get url(): string {
+    if ((this.activity as Route).route) return `https://www.strava.com/routes/${this.activity.id}`;
+    return `https://www.strava.com/activities/${this.activity.id}`;
+  }
 }
 </script>
 

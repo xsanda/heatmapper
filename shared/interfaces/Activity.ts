@@ -5,7 +5,7 @@ export interface ActivityMap {
 
 export default interface Activity extends ActivityMap {
   name: string;
-  date: string;
+  date: number;
   type: string;
   dateString: string[];
 }

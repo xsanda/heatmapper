@@ -6,6 +6,9 @@ import expressWs from 'express-ws';
 import history from 'connect-history-api-fallback';
 import moment from 'moment';
 import 'moment/min/locales';
+import { createReadStream, existsSync } from 'fs';
+import dotenv from 'dotenv';
+import cookieParser from 'cookie-parser';
 
 import {
   Activity,
@@ -16,14 +19,16 @@ import {
   Route,
   ActivityMap,
 } from '../shared/interfaces';
-
-import { getStravaActivitiesPages, getStravaRoutesPages, getActivity } from './strava';
+import { Strava, tokenExchange } from './strava';
 import eagerIterator, { tick } from './eager-iterator';
 import { inOrder, memoize } from './stateful-functions';
-import { existsSync } from 'fs';
+import { stringify, validate as validateUUID } from 'uuid';
+
+dotenv.config();
 
 const app = express();
 expressWs(app);
+app.use(cookieParser());
 const port = 3000;
 const router = express.Router();
 
@@ -33,32 +38,11 @@ function corsConfig(req, res, next) {
   res.header('Access-Control-Allow-Origin', 'http://localhost:8080');
   res.header('Access-Control-Allow-Credentials', true);
   res.header('Access-Control-Allow-Methods', 'GET,HEAD,OPTIONS');
-  res.header(
-    'Access-Control-Allow-Headers',
-    'Origin, X-Requested-With, Content-Type, Accept, Authorization',
-  );
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
   next();
 }
 
 app.use(corsConfig);
-
-if (existsSync('../client/dist')) {
-  // Middleware for serving '/dist' directory
-  const staticFileMiddleware = express.static('../client/dist');
-
-  // 1st call for unredirected requests
-  app.use(staticFileMiddleware);
-
-  // Support history api
-  app.use(
-    history({
-      index: '../client/dist/index.html',
-    }),
-  );
-
-  // 2nd call for redirected requests
-  app.use(staticFileMiddleware);
-}
 
 function* chunkArray<T>(array: T[], n: number = 10): Generator<T[]> {
   for (let i = 0; i < array.length; i += n) {
@@ -97,7 +81,7 @@ function convertActivitySummary(
   return {
     id,
     name,
-    date,
+    date: +new Date(date),
     map,
     type,
     dateString: formatDateWithLineBreak(date, locales),
@@ -109,12 +93,13 @@ function convertRouteSummary(
   locales: string | string[] = ['en'],
 ): Route {
   return {
+    route: true,
     id,
     name,
     date,
     map,
-    type: ([, 'Ride', 'Run'] as const)[type],
-    subType: ([, 'Road', 'MountainBike', 'Cross', 'Trail', 'Mixed'] as const)[subType],
+    type: { 1: 'Ride', 2: 'Run' }[type],
+    subType: { 1: 'Road', 2: 'MountainBike', 3: 'Cross', 4: 'Trail', 5: 'Mixed' }[subType],
     dateString: formatDateWithLineBreak(date, locales),
   };
 }
@@ -144,14 +129,20 @@ function sortPromises<T>(promises: Promise<T>[]): Promise<T>[] {
   return sorted;
 }
 
-/** @type {Activity[]} */
-let cachedActivities: Activity[] = [];
+router.ws('/activities', (ws, req) => {
+  function send(data: ResponseMessage) {
+    ws.send(JSON.stringify(data));
+  }
 
-router.ws('/activities', async (ws, req) => {
-  /** @type {Map<number, string>} */
   const fetchedMaps: Map<number, string> = new Map();
 
   const locales = req.acceptsLanguages();
+
+  async function requestLogin(token: string, url: string) {
+    send({ type: 'login', cookie: token, url });
+  }
+
+  let strava = new Strava(port, req.cookies['token'], requestLogin);
 
   let live = true;
   const stats: StatsMessage = {
@@ -159,39 +150,33 @@ router.ws('/activities', async (ws, req) => {
     finding: { started: false, finished: false, length: 0 },
   };
   const sendStats = () => {
-    if (live) ws.send(JSON.stringify(stats as ResponseMessage));
+    if (live) send(stats as ResponseMessage);
   };
 
   ws.on('close', () => {
     live = false;
   });
 
+  // TODO: cache this sensibly
   /**
    * Fetches your data from the Strava API
    */
   async function* activitiesIterator(start?: number, end?: number): AsyncGenerator<Activity[]> {
-    if (cachedActivities.length === 0) {
-      const activities = [];
+    // eslint-disable-next-line no-restricted-syntax
+    for await (const page of eagerIterator(strava.getStravaActivitiesPages(start, end))) {
+      if (!live) return;
 
-      // eslint-disable-next-line no-restricted-syntax
-      for await (const page of eagerIterator(getStravaActivitiesPages(start, end))) {
-        if (!live) return;
+      stats.finding.length += page.length;
+      sendStats();
 
-        stats.finding.length = activities.length + page.length;
-        sendStats();
-
-        const newActivities = page
-          .map((activity) => convertActivitySummary(activity as any, locales))
-          .filter((activity) => activity.map);
-        activities.push(...newActivities);
+      const newActivities = page
+        .map((activity) => convertActivitySummary(activity as any, locales))
+        .filter((activity) => activity.map);
+      if (newActivities.length) {
         yield newActivities;
       }
-      cachedActivities = activities;
-    } else {
-      stats.finding.length = cachedActivities.length;
-      sendStats();
-      yield cachedActivities;
     }
+
     stats.finding.finished = true;
   }
 
@@ -199,18 +184,16 @@ router.ws('/activities', async (ws, req) => {
    * Fetches your routes from the Strava API
    */
   async function* routesIterator(): AsyncGenerator<Route[]> {
-    const routes = [];
+    const routes: Route[] = [];
 
     // eslint-disable-next-line no-restricted-syntax
-    for await (const page of eagerIterator(getStravaRoutesPages())) {
+    for await (const page of eagerIterator(strava.getStravaRoutesPages())) {
       if (!live) return;
 
       stats.finding.length = routes.length + page.length;
       sendStats();
 
-      const newRoutes = page
-        .map((route) => convertRouteSummary(route as any, locales))
-        .filter((route) => route.map);
+      const newRoutes = page.map((route) => convertRouteSummary(route as any, locales)).filter((route) => route.map);
       routes.push(...newRoutes);
       yield newRoutes;
     }
@@ -226,7 +209,7 @@ router.ws('/activities', async (ws, req) => {
         let map = fetchedMaps.get(id);
         if (map) fetchedMaps.delete(id);
         if (map && !highDetail) return [id, map];
-        else map = convertActivity((await getActivity(id)) as any, highDetail).map;
+        else map = convertActivity((await strava.getActivity(id)) as any, highDetail).map;
         return [id, map];
       }),
     );
@@ -234,14 +217,13 @@ router.ws('/activities', async (ws, req) => {
       // eslint-disable-next-line no-await-in-loop
       if (!live) return;
       const maps = Object.fromEntries(chunk);
-      ws.send(JSON.stringify({ type: 'maps', chunk: maps } as ResponseMessage));
+      send({ type: 'maps', chunk: maps } as ResponseMessage);
     }
     sendStats();
   });
 
   ws.on('message', async (data) => {
     const message: RequestMessage = JSON.parse(data.toString());
-
     if (message.activities) {
       stats.finding.started = true;
 
@@ -254,12 +236,10 @@ router.ws('/activities', async (ws, req) => {
           activities.forEach(({ map, id }) => {
             fetchedMaps.set(id, map);
           });
-          ws.send(
-            JSON.stringify({
-              type: 'activities',
-              activities: activities.map(({ map, ...activity }) => activity),
-            } as ResponseMessage),
-          );
+          send({
+            type: 'activities',
+            activities: activities.map(({ map, ...activity }) => activity),
+          } as ResponseMessage);
           sendStats();
         }
 
@@ -278,12 +258,10 @@ router.ws('/activities', async (ws, req) => {
         routes.forEach(({ map, id }) => {
           fetchedMaps.set(id, map);
         });
-        ws.send(
-          JSON.stringify({
-            type: 'routes',
-            routes: routes.map(({ map, ...routes }) => routes),
-          } as ResponseMessage),
-        );
+        send({
+          type: 'routes',
+          routes: routes.map(({ map, ...routes }) => routes),
+        } as ResponseMessage);
         sendStats();
       }
 
@@ -297,6 +275,33 @@ router.ws('/activities', async (ws, req) => {
   });
 });
 
+router.get('/token', (req, res) => {
+  const successful = tokenExchange(req.query as any);
+  if (validateUUID(req.query.state as string)) {
+    // 1 year
+    res.cookie('token', req.query.state, { maxAge: 31536000 });
+  }
+  const [code, html] = successful ? [200, 'auth.html'] : [400, 'auth-error.html'];
+  res.writeHead(code, { 'Content-Type': 'text/html; charset=utf-8' });
+  createReadStream(html).pipe(res);
+});
+
 app.use('/api', router);
+
+// Middleware for serving '/dist' directory
+const staticFileMiddleware = express.static('../client/dist');
+
+// 1st call for unredirected requests
+app.use(staticFileMiddleware);
+
+// Support history api
+app.use(
+  history({
+    index: '../client/dist/index.html',
+  }),
+);
+
+// 2nd call for redirected requests
+app.use(staticFileMiddleware);
 
 app.listen(port, () => console.log(`Heatmapper backend listening on port ${port}!`));

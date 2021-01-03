@@ -24,20 +24,18 @@
       </label>
     </div>
     <div class="buttons">
-      <button @click="load">Load</button>
-      <button @click="loadPartial">Load Partial</button>
+      <button @click="loadPartial">Load</button>
       <button @click="loadRoutes">Routes</button>
       <button @click="clearCache">Clear cache</button>
-      <button @click="$emit('toggle:improved-hillshade')">Toggle hillshade</button>
     </div>
     <p :class="[error && 'error']" v-text="statusMessage" />
   </aside>
 </template>
 
 <script lang="ts">
-import { Component, Vue } from 'vue-property-decorator';
+import { Component, Vue, Watch } from 'vue-property-decorator';
 
-import { Activity, ResponseMessage, TimeRange, Route, XOR } from '../../../shared/interfaces';
+import { Activity, ResponseMessage, TimeRange, Route } from '../../../shared/interfaces';
 import DateInput from './DateInput.vue';
 import activityTypes from '../activityTypes';
 import Socket from '../socket';
@@ -103,9 +101,13 @@ function getCachedActivities(): Activity[] {
 
 function appendCachedActivities(activities: Activity[], end: number, start?: number) {
   const existingStore = getActivityStore();
+  const ids = new Set(activities.map((activity) => activity.id));
   const newStore: ActivityStore = {
     covered: TimeRange.merge((existingStore.covered || []).concat({ start, end })),
-    activities: (existingStore.activities || []).concat(activities),
+    activities: (existingStore.activities || [])
+      .filter((existingActivity) => !ids.has(existingActivity.id))
+      .concat(activities)
+      .sort((a, b) => b.id - a.id),
   };
   localStorage.setItem('activities', JSON.stringify(newStore));
 }
@@ -141,13 +143,11 @@ function filterActivities(
   start?: Date | null,
   end?: Date | null,
 ): Activity[] {
-  const startString = start && new Date(start).toISOString();
-  const endString = end && new Date(end).toISOString();
   return activities.filter((activity) =>
     [
       !type || type.split(',').includes(activity.type),
-      !startString || startString.localeCompare(activity.date) <= 0,
-      !endString || endString.localeCompare(activity.date) >= 0,
+      !start || activity.date >= +start,
+      !end || activity.date <= +end,
     ].every(Boolean),
   );
 }
@@ -157,7 +157,7 @@ function filterRoutes(
   type?: string,
   start?: Date | null,
   end?: Date | null,
-): Activity[] {
+): Route[] {
   return routes.filter((route) => [!type || type.split(',').includes(route.type)].every(Boolean));
 }
 
@@ -212,6 +212,7 @@ export default class Form extends Vue {
 
   clearCache() {
     localStorage.clear();
+    document.cookie = 'token=';
     this.stats = { cleared: true };
     this.$emit('clear-activities');
   }
@@ -223,6 +224,12 @@ export default class Form extends Vue {
   receiveMaps(maps: Record<string, string>) {
     this.clientStats.mapsLoaded += Object.keys(maps).length;
     this.$emit('add-activity-maps', maps);
+  }
+
+  @Watch('activityType')
+  onActivityType() {
+    this.$emit('clear-activities', this);
+    this.loadFromCache();
   }
 
   requestMaps(ids: number[], socket?: Socket) {
@@ -272,10 +279,10 @@ export default class Form extends Vue {
     }
   }
 
-  loadFromCache() {
+  loadFromCache(partial = false) {
     const activities = getCachedActivities();
-    if (activities) {
-      this.stats = { finding: { finished: true, length: activities.length } };
+    if (activities && activities.length) {
+      if (!partial) this.stats = { finding: { finished: true, length: activities.length } };
       const cachedActivities = activities.filter(({ id }) => getCachedMap(id));
       this.clientStats.mapsNotCached = activities.length - cachedActivities.length;
       this.receiveActivities(cachedActivities);
@@ -306,11 +313,9 @@ export default class Form extends Vue {
     await this.sockets({ routes: true });
   }
 
-  async sockets({
-    partial = false,
-    routes = false,
-  }: XOR<[{ partial?: boolean }, { routes?: boolean }]> = {}) {
+  async sockets({ partial = false, routes = false } = {}): Promise<void> {
     this.$emit('clear-activities', this);
+    if (partial) this.loadFromCache(partial);
     this.clientStats = {
       mapsRequested: 0,
       mapsLoaded: 0,
@@ -358,6 +363,16 @@ export default class Form extends Vue {
           case 'maps': {
             saveCachedMaps(data.chunk);
             this.receiveMaps(data.chunk);
+            break;
+          }
+          case 'login': {
+            // eslint-disable-next-line no-restricted-globals
+            const shouldLogin = confirm(
+              'You are not logged in. Press OK to continue to log in with Strava.',
+            );
+            if (shouldLogin) {
+              window.open(data.url, 'menubar=false,toolbar=false,width=300, height=300');
+            }
             break;
           }
           default:

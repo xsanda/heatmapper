@@ -6,5 +6,12 @@
   "devDependencies": {
     "eslint": "^7.5.0",
     "typescript": "^3.9.7"
+  },
+  "prettier": {
+    "printWidth": 100,
+    "bracketSpacing": true,
+    "singleQuote": true,
+    "trailingComma": "all",
+    "arrowParens": "always"
   }
 }

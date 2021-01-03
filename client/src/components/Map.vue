@@ -101,8 +101,6 @@ export default class Map extends Vue {
 
   @PropSync('zoom', { default: 0 }) modelZoom!: number;
 
-  @PropSync('improvedHillshade', { default: false }) modelImprovedHillshade!: boolean;
-
   @PropSync('selected', { default: () => [] }) modelSelected!: number[];
 
   @Prop({ required: true }) readonly activities!: Activity[];
@@ -145,19 +143,6 @@ export default class Map extends Vue {
         this.flyTo(this.selectedActivities);
       }
     });
-  }
-
-  @Watch('modelImprovedHillshade') onImprovedHillshade(improvedHillshade: boolean) {
-    this.map?.setLayoutProperty(
-      'improved-hillshading',
-      'visibility',
-      improvedHillshade ? 'visible' : 'none',
-    );
-    this.map?.setLayoutProperty(
-      'hillshade-greys',
-      'visibility',
-      !improvedHillshade ? 'visible' : 'none',
-    );
   }
 
   flyTo(activities: Activity[], zoom = false) {
@@ -229,7 +214,7 @@ export default class Map extends Vue {
     // //   minzoom: 0,
     // //   maxzoom: 15,
     // // });
-    this.onImprovedHillshade(this.modelImprovedHillshade);
+
     this.$nextTick(() => {
       this.applyActivities(this.activities, 'lines');
       this.applyActivities(this.selectedActivities, 'selected');

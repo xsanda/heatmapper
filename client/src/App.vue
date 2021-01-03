@@ -7,14 +7,12 @@
       @clear-activities="clearActivities"
       @add-activities="addActivities"
       @add-activity-maps="addActivityMaps"
-      @toggle:improved-hillshade="improvedHillshade = !improvedHillshade"
     />
-    <Map
+    <MapComponent
       :center.sync="location"
       :zoom.sync="zoom"
       :activities="activities"
       :selected.sync="selected"
-      :improved-hillshade="improvedHillshade"
       ref="map"
     />
   </div>
@@ -29,7 +27,7 @@ import MapComponent from './components/Map.vue';
 @Component({
   components: {
     Sidebar: () => import('./components/Sidebar.vue'),
-    Map: MapComponent,
+    MapComponent,
   } as any,
 })
 export default class App extends Vue {
@@ -43,8 +41,6 @@ export default class App extends Vue {
 
   selected: Activity[] = [];
 
-  improvedHillshade = false;
-
   clearActivities() {
     this.activities = [];
   }
@@ -52,8 +48,9 @@ export default class App extends Vue {
   addActivities(activities: Activity[]) {
     const newIDs = new Set(activities.map((activity) => activity.id));
     this.activities = this.activities
-      .filter((activity) => !newIDs.has(activity.id) || console.log('Duplicate:', activity))
-      .concat(activities);
+      .filter((activity) => !newIDs.has(activity.id))
+      .concat(activities)
+      .sort((a, b) => b.id - a.id);
   }
 
   addActivityMaps(maps: never) {

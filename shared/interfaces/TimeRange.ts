@@ -4,9 +4,7 @@ interface TimeRange {
 }
 
 function sort(ranges: TimeRange[]): TimeRange[] {
-  return ranges
-    .slice()
-    .sort(({ start: a = -Infinity }, { start: b = -Infinity }) => a - b);
+  return ranges.slice().sort(({ start: a = -Infinity }, { start: b = -Infinity }) => a - b);
 }
 function* pairs(ranges: TimeRange[]): Generator<[TimeRange?, TimeRange?]> {
   for (let i = 0; i <= ranges.length; i++) {
@@ -43,17 +41,12 @@ namespace TimeRange {
     return merged;
   }
 
-  export function cap(
-    ranges: TimeRange[],
-    start: number = 0,
-    end?: number
-  ): TimeRange[] {
-    return invert(
-      invert(ranges).concat([
-        { end: start },
-        { start: end ?? Date.now() / 1000 },
-      ])
-    );
+  export function subtract(ranges: TimeRange[], toSubtract: TimeRange[]): TimeRange[] {
+    return invert(invert(ranges).concat(toSubtract));
+  }
+
+  export function cap(ranges: TimeRange[], start: number = 0, end?: number): TimeRange[] {
+    return subtract(ranges, [{ start: end ?? Date.now() / 1000 }, { end: start }]);
   }
 }
 

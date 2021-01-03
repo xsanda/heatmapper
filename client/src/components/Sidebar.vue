@@ -1,12 +1,11 @@
 <template>
   <div class="sidebar">
     <h1>Heatmapper</h1>
-    <Form
+    <FormComponent
       ref="form"
       @clear-activities="$emit('clear-activities')"
       @add-activities="$emit('add-activities', $event)"
       @add-activity-maps="$emit('add-activity-maps', $event)"
-      @toggle:improved-hillshade="$emit('toggle:improved-hillshade')"
     />
     <ul>
       <ActivityItem
@@ -22,10 +21,10 @@
 </template>
 
 <script lang="ts">
-import { Component, Vue, PropSync, Prop, Watch, Ref, Emit } from 'vue-property-decorator';
+import { Component, Vue, Prop, Watch, Ref, Emit } from 'vue-property-decorator';
 
 import Activity from '../../../shared/interfaces/Activity';
-import Form from './Form.vue';
+import FormComponent from './Form.vue';
 import ActivityItem from './ActivityItem.vue';
 
 function findLastIndex<T>(xs: T[], p: (x: T) => boolean): number {
@@ -58,14 +57,14 @@ function cancelTextSelection() {
 }
 
 @Component({
-  components: { Form, ActivityItem },
+  components: { FormComponent, ActivityItem },
 })
 export default class Sidebar extends Vue {
   @Prop({ default: () => [] }) activities!: Activity[];
 
   @Prop({ default: () => [] }) selected!: number[];
 
-  @Ref() form!: Form;
+  @Ref() form!: Vue & { loadFromCache(): void };
 
   localSelected?: number[] = undefined;
 

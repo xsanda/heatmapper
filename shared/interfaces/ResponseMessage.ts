@@ -14,6 +14,12 @@ interface MapsMessage {
   chunk: Record<string, string>;
 }
 
+interface LoginMessage {
+  type: 'login';
+  cookie: string;
+  url: string;
+}
+
 export interface StatsMessage {
   type: 'stats';
   finding: { started: boolean; finished: boolean; length: number };
@@ -23,6 +29,7 @@ type ResponseMessage =
   | ActivitiesMessage
   | MapsMessage
   | StatsMessage
-  | RoutesMessage;
+  | RoutesMessage
+  | LoginMessage;
 
 export default ResponseMessage;
