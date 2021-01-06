@@ -1,0 +1,8 @@
+services:
+  heatmapper:
+    build: .
+    ports:
+      - "3000:3000"
+    volumes:
+      - .env:/usr/src/app/dist/server/.env
+      - ./sessions:/usr/src/app/dist/server/sessions

@@ -36,9 +36,7 @@ then
     exit 1
 fi
 
-cd "${0%/*}"
-
-# wrap yarn serve
+cd "$(dirname "$0")" &&
 
 tmux new-session    -c client "$(wrap yarn serve)" \;\
     split-window -v -c server "$(wrap yarn serve)"

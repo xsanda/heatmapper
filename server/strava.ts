@@ -2,7 +2,7 @@ import fetch, { Response } from 'node-fetch';
 import { v4 as uuid, validate as validateUUID } from 'uuid';
 import dotenv from 'dotenv';
 import lockfile from 'proper-lockfile';
-import { readFile, writeFile } from 'fs/promises';
+import { mkdir, readFile, writeFile } from 'fs/promises';
 
 dotenv.config();
 
@@ -47,7 +47,8 @@ export function tokenExchange(data: OAuthCallbackResponse): boolean {
   return true;
 }
 
-const sessionCacheFile = (token: string) => `sessions/${token}.json`;
+const SESSIONS_DIR = 'sessions';
+const sessionCacheFile = (token: string) => `${SESSIONS_DIR}/${token}.json`;
 
 interface Cache {
   stravaRefreshToken?: string;
@@ -87,6 +88,7 @@ export class Strava {
   private async updateFile<T>(file: string, initial: T, transformer: (contents: T) => T | void): Promise<T> {
     let release: () => Promise<void>;
     try {
+      await mkdir(SESSIONS_DIR, { recursive: true });
       release = await lockfile.lock(file, { retries: 4, realpath: false });
     } catch (e) {
       console.error('Cannot lock', file, e);
@@ -101,7 +103,9 @@ export class Strava {
         fileContents = initial;
       }
       let newContents = transformer(fileContents) || fileContents;
+      console.log('writing to ', file);
       await writeFile(file, JSON.stringify(newContents));
+      console.log('written to ', file);
       return newContents;
     } finally {
       await release();
@@ -162,7 +166,7 @@ export class Strava {
         delete cache.stravaAccessToken;
       });
       this.getStravaToken();
-    }, 1000 * 60);
+    }, 1000 * 60 * 60);
 
     return cache.stravaAccessToken;
   }

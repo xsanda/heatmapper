@@ -7,13 +7,14 @@
       "node"
     ],
     "target": "es2020",
-    "noEmit": true,
+    "module": "commonjs",
     "allowJs": true,
     "esModuleInterop": true,
     "downlevelIteration": true,
     "moduleResolution": "node",
-    "outDir": "dist",
-    "declaration": true,
+    "allowSyntheticDefaultImports": true,
+    "outDir": "../dist",
+    "rootDir": "..",
     "strictNullChecks": true
   }
 }

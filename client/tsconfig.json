@@ -14,13 +14,31 @@
     "declarationMap": true,
     "sourceMap": true,
     "baseUrl": ".",
-    "types": ["webpack-env"],
-    "lib": ["es2019.array", "es2019", "DOM", "DOM.Iterable", "ScriptHost"],
-    "rootDir": ".."
+    "types": [
+      "webpack-env"
+    ],
+    "lib": [
+      "es2019.array",
+      "es2019",
+      "DOM",
+      "DOM.Iterable",
+      "ScriptHost"
+    ],
+    "rootDir": "..",
+    "outDir": ".."
   },
   "paths": {
-    "@/*": ["src/*"]
+    "@/*": [
+      "src/*"
+    ]
   },
-  "include": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.vue", "../shared/**/*.ts"],
-  "exclude": ["node_modules"]
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    "src/**/*.vue",
+    "../shared/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
 }

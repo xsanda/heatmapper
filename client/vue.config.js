@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-var-requires */
 const Webpack = require('webpack');
 
 module.exports = {
@@ -28,4 +29,6 @@ module.exports = {
       '^/api/': { target: 'http://localhost:3000/' },
     },
   },
+  outputDir: '../dist/client',
+  productionSourceMap: false,
 };

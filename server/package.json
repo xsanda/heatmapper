@@ -3,8 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "serve": "ts-node index.ts",
-    "build": "tsc --build"
+    "serve": "ts-node app.ts",
+    "build": "tsc --build && cp -r package.json static ../dist/server/ && mkdir -p ../dist/sessions"
   },
   "dependencies": {
     "@types/proper-lockfile": "^4.1.1",

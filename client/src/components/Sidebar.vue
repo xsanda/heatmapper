@@ -1,6 +1,6 @@
 <template>
   <div class="sidebar">
-    <h1>Heatmapper</h1>
+    <h1>Strava Heatmapper</h1>
     <FormComponent
       ref="form"
       @clear-activities="$emit('clear-activities')"
