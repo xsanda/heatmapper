@@ -1,4 +1,4 @@
-import { RequestMessage } from '../../shared/interfaces';
+import type { RequestMessage } from '../../shared/interfaces';
 
 let socketID = 0;
 
@@ -19,22 +19,20 @@ export default class Socket {
   }
 
   private get connection(): Promise<WebSocket> {
-    if (!this._connection)
-      this._connection = new Promise((resolve, reject) => {
-        this.log('Socket', this.id, 'opening');
-        const connection = new WebSocket(this.url);
-        connection.onerror = () => {
-          reject();
-          this.errored = true;
-        };
-        connection.onopen = () => {
-          this.log('Socket', this.id, 'opened to state', connection?.readyState);
-          resolve(connection);
-        };
-        connection.onmessage = (message) => this.messageHandler(message, this);
-        connection.onclose = () => this.closedHandler(this.errored);
-      });
-    return this._connection;
+    return (this._connection ??= new Promise((resolve, reject) => {
+      this.log('Socket', this.id, 'opening');
+      const connection = new WebSocket(this.url);
+      connection.onerror = () => {
+        reject();
+        this.errored = true;
+      };
+      connection.onopen = () => {
+        this.log('Socket', this.id, 'opened to state', connection?.readyState);
+        resolve(connection);
+      };
+      connection.onmessage = (message) => this.messageHandler(message, this);
+      connection.onclose = () => this.closedHandler(this.errored);
+    }));
   }
 
   messageHandler: (message: MessageEvent, socket: Socket) => void;

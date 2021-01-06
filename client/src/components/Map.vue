@@ -1,10 +1,11 @@
 <script lang="tsx">
-import { VNode } from 'vue';
-import { Component, Vue, PropSync, Prop, Watch, Ref, Emit } from 'vue-property-decorator';
-
-import mapboxgl, { LngLatBounds } from 'mapbox-gl';
 import polyline from '@mapbox/polyline';
-import Activity from '../../../shared/interfaces/Activity';
+import type { GeoJSON } from 'geojson';
+import mapboxgl, { LngLatBounds } from 'mapbox-gl';
+import type { VNode } from 'vue';
+import { Component, Emit, Prop, PropSync, Ref, Vue, Watch } from 'vue-property-decorator';
+
+import type Activity from '../../../shared/interfaces/Activity';
 
 declare global {
   interface Window {

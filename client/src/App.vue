@@ -9,19 +9,19 @@
       @add-activity-maps="addActivityMaps"
     />
     <MapComponent
+      ref="map"
       :center.sync="location"
       :zoom.sync="zoom"
       :activities="activities"
       :selected.sync="selected"
-      ref="map"
     />
   </div>
 </template>
 
 <script lang="ts">
-import 'reflect-metadata';
-import { Component, Vue, Ref } from 'vue-property-decorator';
-import { Activity } from '../../shared/interfaces';
+import { Component, Ref, Vue } from 'vue-property-decorator';
+
+import type { Activity } from '../../shared/interfaces';
 import MapComponent from './components/Map.vue';
 
 @Component({

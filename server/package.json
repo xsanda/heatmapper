@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "serve": "ts-node app.ts",
+    "lint": "eslint --fix '*.ts'",
     "clear-built": "[[ -d ../dist/server ]] && rm -r ../dist/server; [[ -d ../dist/shared ]] && rm -r ../dist/shared; true",
     "build": "yarn clear-built; tsc --build && cp -r package.json static ../dist/server/ && mkdir -p ../dist/sessions"
   },

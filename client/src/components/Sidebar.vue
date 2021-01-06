@@ -21,11 +21,11 @@
 </template>
 
 <script lang="ts">
-import { Component, Vue, Prop, Watch, Ref, Emit } from 'vue-property-decorator';
+import { Component, Emit, Prop, Ref, Vue, Watch } from 'vue-property-decorator';
 
-import Activity from '../../../shared/interfaces/Activity';
-import FormComponent from './Form.vue';
+import type Activity from '../../../shared/interfaces/Activity';
 import ActivityItem from './ActivityItem.vue';
+import FormComponent from './Form.vue';
 
 function findLastIndex<T>(xs: T[], p: (x: T) => boolean): number {
   for (let i = xs.length - 1; i >= 0; i -= 1) {

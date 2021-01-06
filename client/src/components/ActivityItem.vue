@@ -9,7 +9,7 @@
       <Spinner size="tiny" line-fg-color="#888" />
     </div>
     <div class="date" v-text="activity.dateString.join('\n')" />
-    <a :href="url" target="_blank" @click="$event.stopPropagation()" class="strava-link">
+    <a :href="url" target="_blank" class="strava-link" @click="$event.stopPropagation()">
       <img src="@/assets/strava_symbol_gray.png" />
       <img src="@/assets/strava_symbol_orange.png" />
     </a>
@@ -17,9 +17,10 @@
 </template>
 
 <script lang="ts">
-import { Component, Vue, Prop } from 'vue-property-decorator';
+import { Component, Prop, Vue } from 'vue-property-decorator';
 import Spinner from 'vue-simple-spinner';
-import { Route, Activity } from '../../../shared/interfaces';
+
+import type { Activity, Route } from '../../../shared/interfaces';
 
 @Component({
   components: { Spinner },

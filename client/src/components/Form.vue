@@ -41,10 +41,11 @@
 <script lang="ts">
 import { Component, Emit, Vue, Watch } from 'vue-property-decorator';
 
-import { Activity, ResponseMessage, TimeRange, Route } from '../../../shared/interfaces';
-import DateInput from './DateInput.vue';
+import type { Activity, ResponseMessage, Route } from '../../../shared/interfaces';
+import { TimeRange } from '../../../shared/interfaces';
 import activityTypes from '../activityTypes';
 import Socket from '../socket';
+import DateInput from './DateInput.vue';
 
 interface ActivityStore {
   covered: TimeRange[];
@@ -77,9 +78,9 @@ function findingString(
 }
 
 function mapString(requested = 0, length = 0, uncached = 0) {
-  if (uncached && requested === 0) return `but no maps cached`;
+  if (uncached && requested === 0) return 'but no maps cached';
   if (uncached) return `loaded ${length} maps, ${uncached} maps not cached`;
-  if (requested && requested === length) return `loaded all maps`;
+  if (requested && requested === length) return 'loaded all maps';
   if (length) return `loaded ${length} of ${count(requested, 'map')} so far`;
   if (requested) return `requested ${count(requested, 'map')}`;
   return '';
