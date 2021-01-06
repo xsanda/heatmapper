@@ -22,7 +22,7 @@ export default class InputDate extends Vue {
   }
 
   @Emit('input')
-  updateValue(): Date {
+  updateValue(): Date | null {
     return this.input.valueAsDate;
   }
 }
