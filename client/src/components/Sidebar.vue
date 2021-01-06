@@ -14,7 +14,7 @@
         :activity="activity"
         :selected="selected.includes(activity.id)"
         @click="select(activity.id, $event)"
-        @dblclick="forceSelect(activity.id, $event)"
+        @dblclick="forceSelect"
       />
     </ul>
   </div>
@@ -34,17 +34,11 @@ function findLastIndex<T>(xs: T[], p: (x: T) => boolean): number {
   return -1;
 }
 
-function findLast<T>(xs: T[], p: (x: T) => boolean): T {
-  return xs[findLastIndex(xs, p)];
-}
-
 function getRange(activities: Activity[], to: number, from?: number | number[]): number[] {
   if (to === undefined) return [];
   if (from === undefined) return [to];
   const fromArray: number[] = [from].flat();
   if (fromArray.includes(to)) return fromArray;
-
-  const selected: number[] = [];
 
   const start = activities.findIndex(({ id }) => to === id || fromArray.includes(id));
   if (start === -1) return [to, ...fromArray];
@@ -79,7 +73,7 @@ export default class Sidebar extends Vue {
     return [id];
   }
 
-  select(id: number, e: MouseEvent) {
+  select(id: number, e: MouseEvent): void {
     if (e.detail > 1) return;
     if (e.shiftKey) cancelTextSelection();
     const newSelected = this.getSelection(id, e);
@@ -89,12 +83,12 @@ export default class Sidebar extends Vue {
   }
 
   @Emit('zoom-to-selected')
-  forceSelect(id: number, e: MouseEvent) {
+  forceSelect(): number[] {
     cancelTextSelection();
     return this.selected;
   }
 
-  @Watch('selected') async onSelected(selected: number[]) {
+  @Watch('selected') async onSelected(selected: number[]): Promise<void> {
     if (selected !== this.localSelected) {
       this.localSelected = selected;
       this.selectionBase = selected;
@@ -104,7 +98,7 @@ export default class Sidebar extends Vue {
     }
   }
 
-  mounted() {
+  mounted(): void {
     if (!this.activities || this.activities.length === 0) {
       this.form.loadFromCache();
     }

@@ -2,4 +2,4 @@
 
 cd "$(dirname "$0")" &&
 
-./build && ./container --build
+./build && ./container --build "$@"

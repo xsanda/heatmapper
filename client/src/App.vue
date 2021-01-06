@@ -28,7 +28,7 @@ import MapComponent from './components/Map.vue';
   components: {
     Sidebar: () => import('./components/Sidebar.vue'),
     MapComponent,
-  } as any,
+  },
 })
 export default class App extends Vue {
   @Ref() map!: Vue & { zoomToSelection(): void };
@@ -41,11 +41,11 @@ export default class App extends Vue {
 
   selected: Activity[] = [];
 
-  clearActivities() {
+  clearActivities(): void {
     this.activities = [];
   }
 
-  addActivities(activities: Activity[]) {
+  addActivities(activities: Activity[]): void {
     const newIDs = new Set(activities.map((activity) => activity.id));
     this.activities = this.activities
       .filter((activity) => !newIDs.has(activity.id))
@@ -53,14 +53,14 @@ export default class App extends Vue {
       .sort((a, b) => b.id - a.id);
   }
 
-  addActivityMaps(maps: never) {
+  addActivityMaps(maps: never): void {
     Object.entries(maps).forEach(([activity, map]) => {
       const i = this.activities.findIndex(({ id }) => id.toString() === activity);
       this.$set(this.activities, i, { ...this.activities[i], map });
     });
   }
 
-  zoomToSelected(selection: Activity[]) {
+  zoomToSelected(selection: Activity[]): void {
     this.selected = selection;
     this.map.zoomToSelection();
   }

@@ -3,6 +3,7 @@ import { v4 as uuid, validate as validateUUID } from 'uuid';
 import dotenv from 'dotenv';
 import lockfile from 'proper-lockfile';
 import { mkdir, readFile, writeFile } from 'fs/promises';
+import NeedsLogin from './needs-login';
 
 dotenv.config();
 
@@ -12,16 +13,6 @@ interface OAuthCallbackResponse {
   code: string;
   state: string;
   scope: string;
-}
-
-export class NeedsLogin extends Error {
-  constructor(message?: string) {
-    super(message);
-    this.name = 'NeedsLogin';
-    // setPrototypeOf explanation:
-    // https://github.com/Microsoft/TypeScript/wiki/Breaking-Changes#extending-built-ins-like-error-array-and-map-may-no-longer-work
-    Object.setPrototypeOf(this, NeedsLogin.prototype);
-  }
 }
 
 const callbacks = new Map<string, (registration: OAuthCallbackResponse) => void>();
@@ -56,14 +47,56 @@ interface Cache {
   stravaAccessToken?: string;
 }
 
+/**
+ * Lock a file and update its contents.
+ *
+ * The second overload allows a more specific type to be inferred for the new value of the file.
+ */
+async function updateFile<T>(file: string, initial: T, transformer: (contents: T) => undefined | void): Promise<T>;
+
+async function updateFile<T, U extends T = T>(file: string, initial: T, transformer: (contents: T) => U): Promise<U>;
+
+async function updateFile<T>(file: string, initial: T, transformer: (contents: T) => T | void): Promise<T> {
+  let release: () => Promise<void>;
+  try {
+    await mkdir(SESSIONS_DIR, { recursive: true });
+    release = await lockfile.lock(file, { retries: 4, realpath: false });
+  } catch (e) {
+    console.error('Cannot lock', file, e);
+    throw e;
+  }
+  try {
+    let fileContents: T;
+    try {
+      fileContents = JSON.parse(await readFile(file, 'utf-8'));
+    } catch (e) {
+      if (initial === undefined) return initial;
+      fileContents = initial;
+    }
+    const newContents = transformer(fileContents) || fileContents;
+    console.log('writing to ', file);
+    await writeFile(file, JSON.stringify(newContents));
+    console.log('written to ', file);
+    return newContents;
+  } finally {
+    await release();
+  }
+}
+
 export class Strava {
   private domain: string;
+
   private requestLogin: (token: string, url: string) => Promise<void>;
+
   private token: string;
 
-  constructor(domain: string, token: string | undefined, requestLogin: (token: string, url: string) => Promise<void>) {
+  constructor(
+    domain: string,
+    tokenCookie: string | undefined,
+    requestLogin: (token: string, url: string) => Promise<void>,
+  ) {
     this.domain = domain;
-    this.token = token && validateUUID(token) ? token : uuid();
+    this.token = tokenCookie && validateUUID(tokenCookie) ? tokenCookie : uuid();
     this.requestLogin = requestLogin;
   }
 
@@ -75,40 +108,6 @@ export class Strava {
       return cache;
     } catch (error) {
       return {};
-    }
-  }
-
-  /**
-   * Lock a file and update its contents.
-   *
-   * The second overload allows a more specific type to be inferred for the new value of the file.
-   */
-  private async updateFile<T>(file: string, initial: T, transformer: (contents: T) => undefined | void): Promise<T>;
-  private async updateFile<T, U extends T = T>(file: string, initial: T, transformer: (contents: T) => U): Promise<U>;
-  private async updateFile<T>(file: string, initial: T, transformer: (contents: T) => T | void): Promise<T> {
-    let release: () => Promise<void>;
-    try {
-      await mkdir(SESSIONS_DIR, { recursive: true });
-      release = await lockfile.lock(file, { retries: 4, realpath: false });
-    } catch (e) {
-      console.error('Cannot lock', file, e);
-      throw e;
-    }
-    try {
-      let fileContents: T;
-      try {
-        fileContents = JSON.parse(await readFile(file, 'utf-8'));
-      } catch (e) {
-        if (initial === undefined) return initial;
-        fileContents = initial;
-      }
-      let newContents = transformer(fileContents) || fileContents;
-      console.log('writing to ', file);
-      await writeFile(file, JSON.stringify(newContents));
-      console.log('written to ', file);
-      return newContents;
-    } finally {
-      await release();
     }
   }
 
@@ -152,8 +151,8 @@ export class Strava {
 
     const stravaAthlete = data.athlete?.id;
 
-    const cache = await this.updateFile(sessionCacheFile(this.token), { stravaAthlete }, (cache: Cache) => ({
-      ...cache,
+    const cache = await updateFile(sessionCacheFile(this.token), { stravaAthlete }, (oldCache: Cache) => ({
+      ...oldCache,
       stravaAccessToken: data.access_token,
       stravaRefreshToken: data.refresh_token,
     }));
@@ -162,8 +161,8 @@ export class Strava {
 
     // Hourly
     setTimeout(async () => {
-      await this.updateFile(sessionCacheFile(this.token), undefined, (cache: Cache) => {
-        delete cache.stravaAccessToken;
+      await updateFile(sessionCacheFile(this.token), undefined, (oldCache: Cache) => {
+        delete oldCache.stravaAccessToken;
       });
       this.getStravaToken();
     }, 1000 * 60 * 60);
@@ -171,10 +170,9 @@ export class Strava {
     return cache.stravaAccessToken;
   }
 
-  private async rawStravaAPI(endpoint: string, query: Record<string, any> = {}) {
+  private async rawStravaAPI(endpoint: string, query: Record<string, string | number | undefined> = {}) {
     const API_BASE = 'https://www.strava.com/api/v3';
-    const queryString = Object.entries(query)
-      .filter(([, value]) => value)
+    const queryString = (Object.entries(query).filter(([, value]) => value) as [string, string | number][])
       .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`)
       .join('&');
     const API = `${API_BASE}${endpoint}?${queryString}`;
@@ -186,11 +184,10 @@ export class Strava {
   }
 
   async getAthlete(): Promise<number> {
-    while (true) {
-      let athlete = (await this.loadCache()).stravaAthlete;
-      if (athlete !== undefined) return athlete;
-      await this.getAccessTokenFromBrowser();
-    }
+    const athlete = (await this.loadCache()).stravaAthlete;
+    if (athlete !== undefined) return athlete;
+    await this.getAccessTokenFromBrowser();
+    return await this.getAthlete();
   }
 
   private async getAccessTokenFromBrowser(): Promise<void> {
@@ -229,12 +226,15 @@ export class Strava {
     });
   }
 
-  private async retryStravaAPI(endpoint: string, query: Record<string, unknown> = {}): Promise<Response> {
+  private async retryStravaAPI(
+    endpoint: string,
+    query: Record<string, string | number | undefined> = {},
+  ): Promise<Response> {
     await this.getAccessTokenFromBrowser();
     return await this.rawStravaAPI(await this.interpolateEndpoint(endpoint), query);
   }
 
-  private async stravaAPI<T>(endpoint: string, query: Record<string, unknown> = {}): Promise<T> {
+  private async stravaAPI<T>(endpoint: string, query: Record<string, string | number | undefined> = {}): Promise<T> {
     let data: Response;
     try {
       data = await this.rawStravaAPI(await this.interpolateEndpoint(endpoint), query);
@@ -267,8 +267,6 @@ export class Strava {
     let i = 1;
     while (true) {
       const page = await this.getActivitiesPage(i, start, end);
-      if (!page || !page.length) console.log(page, i, start, end);
-      console.log('page', i, 'has length', page.length);
       if (!page.length) break;
       yield page;
       i += 1;

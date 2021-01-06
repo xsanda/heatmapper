@@ -39,7 +39,7 @@
 </template>
 
 <script lang="ts">
-import { Component, Vue, Watch } from 'vue-property-decorator';
+import { Component, Emit, Vue, Watch } from 'vue-property-decorator';
 
 import { Activity, ResponseMessage, TimeRange, Route } from '../../../shared/interfaces';
 import DateInput from './DateInput.vue';
@@ -189,11 +189,11 @@ export default class Form extends Vue {
 
   starting = false;
 
-  get statusMessage() {
+  get statusMessage(): string {
     return this.error || this.statsMessage();
   }
 
-  statsMessage() {
+  statsMessage(): string {
     // TODO: lift finding up
     const { finding = {}, cleared = false } = this.stats;
     if (cleared) return 'Cleared cache';
@@ -209,29 +209,30 @@ export default class Form extends Vue {
     );
   }
 
-  clearCache() {
+  clearCache(): void {
     localStorage.clear();
     document.cookie = 'token=';
     this.stats = { cleared: true };
     this.$emit('clear-activities');
   }
 
-  setError(message: string) {
+  setError(message: string): void {
     this.error = message;
   }
 
-  receiveMaps(maps: Record<string, string>) {
+  @Emit('add-activity-maps')
+  receiveMaps(maps: Record<string, string>): Record<string, string> {
     this.clientStats.mapsLoaded += Object.keys(maps).length;
-    this.$emit('add-activity-maps', maps);
+    return maps;
   }
 
   @Watch('activityType')
-  onActivityType() {
+  onActivityType(): void {
     this.$emit('clear-activities', this);
     this.loadFromCache();
   }
 
-  requestMaps(ids: (number | string)[], socket?: Socket) {
+  requestMaps(ids: (number | string)[], socket?: Socket): void {
     this.clientStats.mapsRequested += ids.length;
     const { cached, notCached } = getCachedMaps(ids);
     if (socket && notCached.length) {
@@ -243,7 +244,7 @@ export default class Form extends Vue {
     this.checkFinished(socket);
   }
 
-  receiveActivities(activities: Activity[], socket?: Socket) {
+  receiveActivities(activities: Activity[], socket?: Socket): void {
     const filteredActivities = filterActivities(
       activities,
       this.activityType,
@@ -257,7 +258,7 @@ export default class Form extends Vue {
     );
   }
 
-  receiveRoutes(routes: Route[], socket?: Socket) {
+  receiveRoutes(routes: Route[], socket?: Socket): void {
     const filteredRoutes = filterRoutes(routes, this.activityType);
     this.$emit('add-activities', filteredRoutes);
     this.requestMaps(
@@ -266,19 +267,18 @@ export default class Form extends Vue {
     );
   }
 
-  checkFinished(socket?: Socket) {
+  checkFinished(socket?: Socket): void {
     if (
       socket &&
       !this.starting &&
       this.clientStats.mapsRequested === this.clientStats.mapsLoaded &&
       this.stats.finding?.finished
     ) {
-      console.info('Closing socket', socket.id);
       socket.close();
     }
   }
 
-  loadFromCache(partial = false) {
+  loadFromCache(partial = false): void {
     const activities = getCachedActivities();
     if (activities && activities.length) {
       if (!partial) this.stats = { finding: { finished: true, length: activities.length } };
@@ -288,27 +288,27 @@ export default class Form extends Vue {
     }
   }
 
-  startLoading(socket: Socket, ranges: TimeRange[]) {
+  startLoading(socket: Socket, ranges: TimeRange[]): void {
     socket.sendRequest({
       activities: ranges,
     });
   }
 
-  startLoadingRoutes(socket: Socket) {
+  startLoadingRoutes(socket: Socket): void {
     socket.sendRequest({
       routes: true,
     });
   }
 
-  async load() {
+  async load(): Promise<void> {
     await this.sockets();
   }
 
-  async loadPartial() {
+  async loadPartial(): Promise<void> {
     await this.sockets({ partial: true });
   }
 
-  async loadRoutes() {
+  async loadRoutes(): Promise<void> {
     await this.sockets({ routes: true });
   }
 
@@ -373,7 +373,8 @@ export default class Form extends Vue {
             break;
           }
           default:
-            console.log(`Unknown message ${data}`);
+            // eslint-disable-next-line no-console
+            console.warn(`Unknown message ${data}`);
         }
         this.checkFinished(socket);
       },

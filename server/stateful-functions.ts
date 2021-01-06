@@ -34,6 +34,6 @@ export function memoize<T>(fn: (...args: any[]) => T): (...args: any[]) => T {
  * Add a mutex to an async function, so any calls wait until previous calls
  */
 export const inOrder = <T extends any[], R = void>(fn: (...args: T) => Promise<R>): ((...args: T) => Promise<R>) => {
-  let lastItem = Promise.resolve();
+  const lastItem = Promise.resolve();
   return (...args) => lastItem.catch(() => undefined).then(() => fn(...args));
 };

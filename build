@@ -5,8 +5,6 @@ shopt -s extglob
 
 cd "$(dirname "$0")" &&
 
-(echo "clearing old builds"; rm -r dist/@(client|server|shared)/) &&
-
 (echo "building client"; yarn --cwd client build) &&
 
 (echo "building server"; yarn --cwd server build)

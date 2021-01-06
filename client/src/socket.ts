@@ -14,6 +14,7 @@ export default class Socket {
   private verbose: boolean;
 
   private log(...args: unknown[]) {
+    // eslint-disable-next-line no-console
     if (this.verbose) console.log(...args);
   }
 
@@ -61,12 +62,12 @@ export default class Socket {
     this.log('Sent', data);
   }
 
-  async sendRequest(message: RequestMessage) {
+  async sendRequest(message: RequestMessage): Promise<void> {
     this.log('Socket', this.id, 'sending', message);
     await this.send(JSON.stringify(message));
   }
 
-  async close() {
+  async close(): Promise<void> {
     if (this._connection) (await this.connection).close();
   }
 }

@@ -1,5 +1,6 @@
 <script lang="tsx">
-import { Component, Vue, PropSync, Prop, Watch, Ref } from 'vue-property-decorator';
+import { VNode } from 'vue';
+import { Component, Vue, PropSync, Prop, Watch, Ref, Emit } from 'vue-property-decorator';
 
 import mapboxgl, { LngLatBounds } from 'mapbox-gl';
 import polyline from '@mapbox/polyline';
@@ -89,7 +90,7 @@ const buildLineLayer = (id: string, layer: LayerDef): mapboxgl.Layer => ({
   },
 })
 export default class Map extends Vue {
-  render() {
+  render(): VNode {
     return (
       <div class="map-container" ref="container">
         {!window.cachedMapComponent && <div id="map" ref="mapElem" />}
@@ -109,7 +110,7 @@ export default class Map extends Vue {
 
   @Ref() mapElem!: HTMLDivElement;
 
-  get selectedActivities() {
+  get selectedActivities(): Activity[] {
     return this.activities.filter((activity) => this.modelSelected.includes(activity.id));
   }
 
@@ -124,19 +125,19 @@ export default class Map extends Vue {
 
   map?: mapboxgl.Map = undefined;
 
-  @Watch('mapStyle') onMapStyle(style: string) {
+  @Watch('mapStyle') onMapStyle(style: string): void {
     this.map?.setStyle(style);
   }
 
-  @Watch('activities') onActivities(activities: Activity[]) {
+  @Watch('activities') onActivities(activities: Activity[]): void {
     this.applyActivities(activities, 'lines');
   }
 
-  @Watch('selectedActivities') onSelectedActivities(selectedActivities: Activity[]) {
+  @Watch('selectedActivities') onSelectedActivities(selectedActivities: Activity[]): void {
     this.applyActivities(selectedActivities, 'selected');
   }
 
-  @Watch('selected') onSelected() {
+  @Watch('selected') onSelected(): void {
     this.$nextTick(() => {
       if (this.modelSelected !== this.localSelected) {
         this.localSelected = this.modelSelected;
@@ -145,7 +146,7 @@ export default class Map extends Vue {
     });
   }
 
-  flyTo(activities: Activity[], zoom = false) {
+  flyTo(activities: Activity[], zoom = false): void {
     const padding = 20;
 
     const { map } = this;
@@ -176,16 +177,16 @@ export default class Map extends Vue {
     }
   }
 
-  zoomToSelection() {
+  zoomToSelection(): void {
     this.flyTo(this.selectedActivities, true);
   }
 
-  applyActivities(next: Activity[], sourceID: string) {
+  applyActivities(next: Activity[], sourceID: string): void {
     const source = this.map?.getSource(sourceID);
     (source as mapboxgl.GeoJSONSource)?.setData(makeGeoJsonData(next));
   }
 
-  mapLoaded(map: mapboxgl.Map) {
+  mapLoaded(map: mapboxgl.Map): void {
     map.resize();
 
     // // eslint-disable-next-line no-restricted-syntax
@@ -221,7 +222,7 @@ export default class Map extends Vue {
     });
   }
 
-  click(map: mapboxgl.Map, e: mapboxgl.MapMouseEvent) {
+  click(map: mapboxgl.Map, e: mapboxgl.MapMouseEvent): void {
     const surround = (
       point: mapboxgl.Point,
       offset: number,
@@ -241,21 +242,22 @@ export default class Map extends Vue {
     this.select();
   }
 
-  select(id?: number) {
+  select(id?: number): void {
     const selected = id !== undefined ? [id] : [];
     this.localSelected = selected;
     this.modelSelected = selected;
   }
 
-  zoomend(map: mapboxgl.Map) {
+  zoomend(map: mapboxgl.Map): void {
     this.modelZoom = map.getZoom();
   }
 
-  moveend(map: mapboxgl.Map) {
-    this.$emit('update:center', map.getCenter());
+  @Emit('update:center')
+  moveend(map: mapboxgl.Map): mapboxgl.LngLat {
+    return map.getCenter();
   }
 
-  mounted() {
+  mounted(): void {
     let map: mapboxgl.Map;
     const cachedMap = window.cachedMapComponent?.map;
     if (cachedMap) {

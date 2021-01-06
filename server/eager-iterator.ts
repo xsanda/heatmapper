@@ -10,7 +10,7 @@ export const tick = (): Promise<void> => sleep(0);
 const eagerIterator = <T>(asyncIterable: AsyncIterable<T>): AsyncIterableIterator<T> => {
   let returned = false;
 
-  const eagerIteratorStep = async <T>(asyncIterator: AsyncIterator<T>): Promise<RecursiveIterator<T>> => {
+  const eagerIteratorStep = async (asyncIterator: AsyncIterator<T>): Promise<RecursiveIterator<T>> => {
     if (returned) return { next: { done: true, value: undefined } };
     await tick();
     const next = await asyncIterator.next();
@@ -23,6 +23,7 @@ const eagerIterator = <T>(asyncIterable: AsyncIterable<T>): AsyncIterableIterato
     async next() {
       if (returned) return { done: true, value: undefined };
       const currentIteratorPromise = iteratorPromise;
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       iteratorPromise = currentIteratorPromise.then((currentIterator) => currentIterator.nextIterator!);
       const { next } = await currentIteratorPromise;
       if (next.done) returned = true;

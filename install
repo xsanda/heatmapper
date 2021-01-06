@@ -1,0 +1,9 @@
+#/usr/bin/env bash
+
+cd "$(dirname "$0")" &&
+
+(echo "Installing shared packages"; yarn --cwd shared) &&
+
+(echo;echo "Installing client packages"; yarn --cwd client) &&
+
+(echo;echo "Installing server packages"; yarn --cwd server)

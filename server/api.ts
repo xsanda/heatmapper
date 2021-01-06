@@ -9,7 +9,7 @@ import eagerIterator, { tick } from './eager-iterator';
 import { inOrder, memoize } from './stateful-functions';
 import { Strava, tokenExchange } from './strava';
 
-async function* chunkAsync<T>(array: Promise<T>[], n: number = 10): AsyncGenerator<T[]> {
+async function* chunkAsync<T>(array: Promise<T>[], n = 10): AsyncGenerator<T[]> {
   for (let i = 0; i < array.length; i += n) {
     yield Promise.all(array.slice(i, i + n));
   }
@@ -70,7 +70,8 @@ function convertActivity({ id, map }, highDetail = false): ActivityMap {
     if (!map) {
       console.error('No map for activity', id);
       return { id, map: '' };
-    } else throw e;
+    }
+    throw e;
   }
 }
 
@@ -106,7 +107,7 @@ export default function apiRouter(domain: string) {
       send({ type: 'login', cookie: token, url });
     }
 
-    let strava = new Strava(domain, req.cookies['token'], requestLogin);
+    const strava = new Strava(domain, req.cookies.token, requestLogin);
 
     const stats: StatsMessage = {
       type: 'stats',
@@ -172,7 +173,7 @@ export default function apiRouter(domain: string) {
           let map = fetchedMaps.get(id);
           if (map) fetchedMaps.delete(id);
           if (map && !highDetail) return [id, map];
-          else map = convertActivity((await strava.getActivity(id)) as any, highDetail).map;
+          map = convertActivity((await strava.getActivity(id)) as any, highDetail).map;
           return [id, map];
         }),
       );

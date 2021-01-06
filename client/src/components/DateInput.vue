@@ -3,7 +3,7 @@
   <input type="date" ref="input" :name="name" :value="dateToYYYYMMDD(value)" @input="updateValue" />
 </template>
 <script lang="ts">
-import { Component, Vue, Prop, Ref } from 'vue-property-decorator';
+import { Component, Vue, Prop, Ref, Emit } from 'vue-property-decorator';
 
 @Component
 export default class InputDate extends Vue {
@@ -14,15 +14,16 @@ export default class InputDate extends Vue {
   @Ref() input!: HTMLInputElement;
 
   // Set to the start of the day provided, in local time
-  dateToYYYYMMDD(d: Date) {
+  dateToYYYYMMDD(d: Date): string {
     // alternative implementations in https://stackoverflow.com/q/23593052/1850609
     return (
       d && new Date(d.getTime() - d.getTimezoneOffset() * 60 * 1000).toISOString().split('T')[0]
     );
   }
 
-  updateValue() {
-    this.$emit('input', this.input.valueAsDate);
+  @Emit('input')
+  updateValue(): Date {
+    return this.input.valueAsDate;
   }
 }
 </script>
