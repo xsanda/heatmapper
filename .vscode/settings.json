@@ -5,4 +5,9 @@
   },
   "vetur.format.defaultFormatter.js": "none",
   "vetur.format.defaultFormatter.ts": "none",
+  "[vue]": {
+    "editor.rulers": [
+      100
+    ],
+  },
 }

@@ -20,16 +20,18 @@ export default class InputDate extends Vue {
   @Ref() input!: HTMLInputElement;
 
   // Set to the start of the day provided, in local time
-  dateToYYYYMMDD(d: Date): string {
+  dateToYYYYMMDD(date: Date | null): string | null {
     // alternative implementations in https://stackoverflow.com/q/23593052/1850609
     return (
-      d && new Date(d.getTime() - d.getTimezoneOffset() * 60 * 1000).toISOString().split('T')[0]
+      date &&
+      new Date(date.getTime() - date.getTimezoneOffset() * 60 * 1000).toISOString().split('T')[0]
     );
   }
 
   @Emit('input')
   updateValue(): Date | null {
-    return this.input.valueAsDate;
+    const rawDate = this.input.valueAsDate;
+    return rawDate && new Date(rawDate.getTime() + rawDate.getTimezoneOffset() * 60 * 1000);
   }
 }
 </script>
