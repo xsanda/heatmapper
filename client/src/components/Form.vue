@@ -28,10 +28,20 @@
       <button @click="loadRoutes">Routes</button>
       <button @click="clearCache">Clear cache</button>
     </div>
-    <div v-if="continueLogin" class="not-logged-in">
-      <p>You are not logged in. Click to continue to log in with Strava.</p>
-      <div class="centered">
-        <button @click="continueLogin && continueLogin()">Log in</button>
+    <div v-if="continueLogin" class="not-logged-in-container">
+      <div class="not-logged-in">
+        <p>You are not logged in. Click to continue to log in with Strava.</p>
+        <p class="centered">
+          <button @click="continueLogin && continueLogin()">Log in</button>
+        </p>
+        <p class="small">
+          This will use a cookie to remember who you are logged in as, which you can clear at any
+          time by clicking "Clear Cache". You may
+          <a href="#no-cookies" @click.prevent="continueLogin && continueLogin(false)"
+            >proceed without cookies</a
+          >
+          if you wish to log in every time.
+        </p>
       </div>
     </div>
     <p v-else :class="[error && 'error']" v-text="statusMessage" />
@@ -212,7 +222,7 @@ export default class Form extends Vue {
 
   clearCache(): void {
     localStorage.clear();
-    document.cookie = 'token=';
+    document.cookie = `token=;expires=${new Date(0).toUTCString()}`;
     this.stats = { cleared: true };
     this.$emit('clear-activities');
   }
@@ -367,8 +377,8 @@ export default class Form extends Vue {
             break;
           }
           case 'login': {
-            this.continueLogin = () => {
-              document.cookie = `token=${data.cookie};max-age=31536000`;
+            this.continueLogin = (cookies = true) => {
+              if (cookies) document.cookie = `token=${data.cookie};max-age=31536000`;
               this.continueLogin = null;
               window.open(data.url, 'menubar=false,toolbar=false,width=300, height=300');
             };
@@ -437,11 +447,17 @@ aside > .buttons {
   color: red;
 }
 
-.not-logged-in {
-  background-color: var(--background-strong);
-  border-radius: 1em;
-  margin: 1em;
+.not-logged-in-container {
+  background-color: var(--background);
   padding: 1em;
+  position: sticky;
+  bottom: 1em;
+
+  .not-logged-in {
+    background-color: var(--background-strong);
+    border-radius: 1em;
+    padding: 1em;
+  }
 
   p {
     margin-top: 0;
@@ -450,5 +466,9 @@ aside > .buttons {
   .centered {
     text-align: center;
   }
+}
+
+p.small {
+  font-size: 0.8em;
 }
 </style>
