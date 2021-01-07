@@ -1,13 +1,13 @@
 {
   "private": true,
   "dependencies": {
-    "@typescript-eslint/parser": "^4.11.1"
+    "dotenv": "^8.2.0"
   },
   "devDependencies": {
-    "eslint": "^7.5.0",
-    "typescript": "^3.9.7",
     "@typescript-eslint/eslint-plugin": "^4.11.1",
-    "@typescript-eslint/parser": "^4.11.1"
+    "@typescript-eslint/parser": "^4.11.1",
+    "eslint": "^7.5.0",
+    "typescript": "^3.9.7"
   },
   "prettier": {
     "printWidth": 100,

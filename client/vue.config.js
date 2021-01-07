@@ -1,6 +1,8 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 const Webpack = require('webpack');
 
+const { VUE_DEV_PORT, SERVER_DOMAIN } = require('../shared/config/dotenv');
+
 module.exports = {
   chainWebpack(config) {
     config.plugin('html').tap((args) => {
@@ -24,9 +26,9 @@ module.exports = {
   },
   devServer: {
     hot: true,
-    port: 8080,
+    port: VUE_DEV_PORT,
     proxy: {
-      '^/api/': { target: 'http://localhost:3000/' },
+      '^/api/': { target: SERVER_DOMAIN },
     },
   },
   outputDir: '../dist/client',

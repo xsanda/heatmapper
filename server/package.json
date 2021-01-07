@@ -6,7 +6,8 @@
     "serve": "ts-node app.ts",
     "lint": "eslint --fix '*.ts'",
     "clear-built": "[[ -d ../dist/server ]] && rm -r ../dist/server; [[ -d ../dist/shared ]] && rm -r ../dist/shared; true",
-    "build": "yarn clear-built; tsc --build && cp -r package.json static ../dist/server/ && mkdir -p ../dist/sessions"
+    "copy-for-deployment": "cp -r package.json static ../dist/server/ && cp ../shared/package.json ../dist/shared/ && mkdir -p ../dist/sessions",
+    "build": "yarn clear-built; tsc --build && yarn copy-for-deployment"
   },
   "dependencies": {
     "@types/proper-lockfile": "^4.1.1",

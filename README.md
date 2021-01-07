@@ -41,7 +41,7 @@ Install packages for this one project.
 ##### `yarn serve`
 
 Run a development server for this project.
-Note that the backend dev server will forward frontend requests to the latest local build of the frontend, and the frontend dev server will forward backend requests to the running backend server (on port 3000).
+Note that the backend dev server will forward frontend requests to the latest local build of the frontend, and the frontend dev server will forward backend requests to the running backend server (on port 8080).
 
 As this is a development server, the frontend will automatically recompile and reload on save.
 The browser’s dev tools will allow for Vue to be inspected, unlike when it is build for production.

@@ -2,7 +2,7 @@ services:
   heatmapper:
     build: .
     ports:
-      - "3000:3000"
+      - "8080:8080"
     volumes:
-      - .env:/usr/src/app/dist/server/.env
+      - .env:/usr/src/app/dist/.env
       - ./sessions:/usr/src/app/dist/server/sessions

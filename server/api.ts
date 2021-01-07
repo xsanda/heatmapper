@@ -2,7 +2,6 @@ import express from 'express';
 import { createReadStream } from 'fs';
 import moment from 'moment';
 import 'moment/min/locales';
-import { validate as validateUUID } from 'uuid';
 import { Activity, ActivityMap, RequestMessage, ResponseMessage, Route, TimeRange } from '../shared/interfaces';
 import { StatsMessage } from '../shared/interfaces/ResponseMessage';
 import eagerIterator, { tick } from './eager-iterator';
@@ -241,10 +240,6 @@ export default function apiRouter(domain: string) {
 
   router.get('/token', (req, res) => {
     const successful = tokenExchange(req.query as any);
-    if (validateUUID(req.query.state as string)) {
-      // 1 year
-      res.cookie('token', req.query.state, { maxAge: 31536000 });
-    }
     const [code, html] = successful ? [200, 'static/auth.html'] : [400, 'static/auth-error.html'];
     res.writeHead(code, { 'Content-Type': 'text/html; charset=utf-8' });
     createReadStream(html).pipe(res);

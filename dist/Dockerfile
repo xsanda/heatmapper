@@ -7,7 +7,8 @@ WORKDIR /usr/src/app/dist/server
 RUN yarn global add pm2
 
 RUN yarn --prod --no-lockfile
+RUN yarn --prod --no-lockfile --cwd ../shared
 
-EXPOSE 3000/tcp
+EXPOSE 8080
 
 CMD ["pm2-runtime","app.js"]

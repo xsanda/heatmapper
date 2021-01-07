@@ -1,4 +1,4 @@
-#/usr/bin/env bash
+#!/usr/bin/env bash
 
 close_all() {
     close_one='tmux send-keys -t "$1" C-c'

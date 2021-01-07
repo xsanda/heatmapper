@@ -74,9 +74,7 @@ async function updateFile<T>(file: string, initial: T, transformer: (contents: T
       fileContents = initial;
     }
     const newContents = transformer(fileContents) || fileContents;
-    console.log('writing to ', file);
     await writeFile(file, JSON.stringify(newContents));
-    console.log('written to ', file);
     return newContents;
   } finally {
     await release();

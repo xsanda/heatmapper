@@ -368,6 +368,7 @@ export default class Form extends Vue {
           }
           case 'login': {
             this.continueLogin = () => {
+              document.cookie = `token=${data.cookie};max-age=31536000`;
               this.continueLogin = null;
               window.open(data.url, 'menubar=false,toolbar=false,width=300, height=300');
             };
