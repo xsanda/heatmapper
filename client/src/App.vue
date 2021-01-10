@@ -90,6 +90,7 @@ body {
   --background: #fff;
   --background-slight: #eee;
   --background-strong: #ccc;
+  --transition-speed: 0.5s;
 }
 
 @media (prefers-color-scheme: dark) {

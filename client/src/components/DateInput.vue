@@ -1,17 +1,21 @@
 <!-- From https://acdcjunior.github.io/how-bind-date-object-to-input-date-vue.js-v-model.html -->
 <template>
-  <input
-    ref="input"
-    type="date"
-    :name="name"
-    :value="dateToYYYYMMDD(value)"
-    @change="updateValue"
-  />
+  <div class="date-input">
+    <input
+      ref="input"
+      type="date"
+      :name="name"
+      :value="dateToYYYYMMDD(value)"
+      @change="updateValue"
+    />
+  </div>
 </template>
 <script lang="ts">
 import { Component, Emit, Prop, Ref, Vue } from 'vue-property-decorator';
 
-@Component
+import Icon from './Icon.vue';
+
+@Component({ components: { Icon } })
 export default class InputDate extends Vue {
   @Prop({ default: null }) value!: Date;
 
@@ -35,3 +39,29 @@ export default class InputDate extends Vue {
   }
 }
 </script>
+
+<style lang="scss" scoped>
+.date-input {
+  display: flex;
+  margin: 1ex;
+
+  border-radius: 0.3em;
+  border: 1px solid gray;
+  background-color: var(--background-slight);
+
+  max-width: min-content;
+  min-width: 3em;
+}
+
+input {
+  background-color: inherit;
+  border: none;
+  border-radius: 0.3em;
+  margin: 0.5em 1em;
+  color: var(--color);
+
+  &:focus {
+    outline: none;
+  }
+}
+</style>

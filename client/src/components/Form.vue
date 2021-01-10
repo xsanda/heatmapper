@@ -1,26 +1,22 @@
 <template>
   <aside>
-    <div class="table">
+    <div class="controls">
       <label>
         <span>Start date</span>
-        <div>
-          <date-input v-model="start" name="start" />
-        </div>
+        <date-input v-model="start" name="start" />
       </label>
       <label>
         <span>End date</span>
-        <div>
-          <date-input v-model="end" name="end" />
-        </div>
+        <date-input v-model="end" name="end" />
       </label>
       <label>
         <span>Activity type</span>
-        <div>
-          <select v-model="activityType">
-            <option selected value="">All activities</option>
-            <option v-for="[id, label] of activityTypes" :key="id" :value="id" v-text="label" />
-          </select>
-        </div>
+        <Dropdown
+          v-model="activityType"
+          :options="activityTypes"
+          blank-value=""
+          blank-label="All activities"
+        />
       </label>
     </div>
     <div class="buttons">
@@ -56,6 +52,7 @@ import { TimeRange } from '../../../shared/interfaces';
 import activityTypes from '../activityTypes';
 import Socket from '../socket';
 import DateInput from './DateInput.vue';
+import Dropdown from './Dropdown.vue';
 
 interface ActivityStore {
   covered: TimeRange[];
@@ -170,7 +167,7 @@ function filterRoutes(
 }
 
 @Component({
-  components: { DateInput },
+  components: { DateInput, Dropdown },
 })
 export default class Form extends Vue {
   start: Date | null = null;
@@ -181,7 +178,9 @@ export default class Form extends Vue {
 
   activityType = '';
 
-  activityTypes = Object.entries(activityTypes).sort((a, b) => a[1].localeCompare(b[1]));
+  activityTypes = Object.entries(activityTypes)
+    .map(([value, label]) => ({ value, label }))
+    .sort((a, b) => a.label.localeCompare(b.label));
 
   stats: {
     status?: string;
@@ -422,17 +421,17 @@ export default class Form extends Vue {
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped lang="scss">
-.table {
-  display: table;
-  margin: auto;
+.controls {
+  padding: 1em;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 
-  > * {
-    display: table-row;
-
-    > * {
-      display: table-cell;
-      padding: 0.2em 0.4em;
-    }
+  label {
+    display: flex;
+    align-items: center;
+    min-width: 0;
   }
 }
 
