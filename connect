@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+
+cd "$(dirname "$0")" &&
+
+if [ -f dist/.env ]; then
+  set -a
+  . dist/.env
+  set +a
+fi
+
+if [ -z "$DEPLOY_HOST" ]; then
+  echo "DEPLOY_HOST is not set, please add this to .env or provide it on the command line" >&2
+  exit 1
+fi
+
+if [ -z "$DEPLOY_USER" ]; then
+  DEPLOY_TARGET="$DEPLOY_HOST"
+else
+  DEPLOY_TARGET="$DEPLOY_USER@$DEPLOY_HOST"
+fi
+
+if [ -z "$DEPLOY_KEYPAIR" ]; then
+  DEPLOY_FLAG=""
+else
+  DEPLOY_FLAG="$(printf -- "-i%q" "$DEPLOY_KEYPAIR")"
+fi
+
+if [ "$0" = "$BASH_SOURCE" ]; then
+  ssh "$DEPLOY_FLAG" "$DEPLOY_TARGET" "$@"
+fi

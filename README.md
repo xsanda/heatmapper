@@ -8,6 +8,11 @@ Required software for developing: [node](https://nodejs.org/en/download/) and [y
 
 Recommended: an IDE such as [Visual Studio Code](https://code.visualstudio.com/), [tmux](https://github.com/tmux/tmux/wiki) if you would like to use [`./serve`](#serve), and [Docker](https://www.docker.com/products/docker-desktop) with [Docker Compose](https://docs.docker.com/compose/) for deploying.
 
+## Setup
+
+Please complete in full the [`.env`](.env) file, by copying [`sample.env`](sample.env).
+When you are ready to deploy, please also complete [`dist/.env`](dist/.env), by copying [`dist/sample.env`](dist/sample.env).
+
 ## Scripts for running
 
 ### Development
@@ -72,3 +77,17 @@ Run `docker-compose down -v` to stop the container permanently.
 Run `./build` followed by `./container --build`, so recompiling both the frontend and backend, and updating and rerunning the container.
 
 Note that if the container was previously left running with `-d`, this will leave it running until it has been rebuilt, to minimise the downtime.
+
+#### `./deploy`
+
+Deploy the container to a remote server, and (re)start it.
+This will use the configuration in [`./dist/.env`](./dist/.env) (see [`./dist/sample.env`](./dist/sample.env)).
+
+#### `./build/deploy`
+
+Run `./build` followed by `./deploy`, so recompiling both the frontend and backend, and updating and rerunning the container on the server.
+
+#### `./connect`
+
+Log in to your remote server.
+If this fails, then `./deploy` will also likely fail, so it is useful for testing.
