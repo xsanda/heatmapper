@@ -1,7 +1,14 @@
 <template>
   <div class="sidebar" :class="{ minimised }">
     <div class="top-box">
-      <h1>Strava Heatmapper</h1>
+      <div class="header">
+        <svg viewBox="0 0 100 36">
+          <text x="50" text-anchor="middle" font-weight="bold">
+            <tspan x="50" y="13">Strava</tspan>
+            <tspan x="50" dy="18">Heatmapper</tspan>
+          </text>
+        </svg>
+      </div>
       <FormComponent
         ref="form"
         @clear-activities="$emit('clear-activities')"
@@ -146,10 +153,23 @@ $max-size-to-minimise: 600px;
   z-index: 1;
   position: relative;
 
-  h1 {
-    padding: 0.5em 1em 0;
-    margin: 0;
-    text-align: center;
+  .header {
+    margin-left: auto;
+    width: $sidebar-width;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.5em 0 0;
+
+    transition: padding var(--transition-speed), width var(--transition-speed);
+
+    svg {
+      height: $minimised-width;
+      fill: var(--color);
+      max-height: 100%;
+      transform-origin: top right;
+      transition: transform var(--transition-speed), transform-origin var(--transition-speed);
+    }
   }
 
   > ul {
@@ -249,6 +269,14 @@ $max-size-to-minimise: 600px;
       .overlay {
         right: 0;
         left: unset;
+      }
+
+      .header {
+        width: $minimised-width / 0.36;
+
+        svg {
+          transform: rotate(-90deg);
+        }
       }
     }
 
