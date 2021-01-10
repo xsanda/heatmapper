@@ -293,6 +293,7 @@ export default class Map extends Vue {
 }
 #map {
   flex: 1;
+  z-index: 0;
 }
 
 .mapboxgl-canvas {
