@@ -1,12 +1,21 @@
 {
   "name": "heatmapper",
   "private": true,
+  "scripts": {
+    "install-all": "scripts/install",
+    "build-deploy": "scripts/build-deploy",
+    "build-container": "scripts/build-container",
+    "deploy": "scripts/deploy",
+    "container": "scripts/container",
+    "build": "scripts/build",
+    "serve": "scripts/serve",
+    "lint": "yarn --cwd=shared lint && yarn --cwd=client lint && yarn --cwd=server lint"
+  },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^4.12.0",
     "@typescript-eslint/parser": "^4.12.0",
     "eslint": "^7.17.0",
     "eslint-config-prettier": "^7.1.0",
-    "eslint-import-resolver-typescript": "^2.3.0",
     "eslint-plugin-prettier": "^3.3.1",
     "eslint-plugin-simple-import-sort": "^7.0.0",
     "prettier": "^2.2.1",

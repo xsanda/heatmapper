@@ -1,9 +1,6 @@
 #!/usr/bin/env bash
 
-# Allow extended globbing
-shopt -s extglob
-
-cd "$(dirname "$0")" &&
+cd "$(dirname "$0")/.." &&
 
 (echo "building client"; yarn --cwd client build) &&
 

@@ -36,7 +36,14 @@ then
     exit 1
 fi
 
-cd "$(dirname "$0")" &&
+cd "$(dirname "$0")/.." &&
 
-tmux new-session    -c client "$(wrap yarn serve)" \;\
-    split-window -v -c server "$(wrap yarn serve)"
+# Replace any special characters with hyphens
+SESSION_NAME="serve@${PWD//[^[:alnum:]\/]/-}" &&
+
+(
+    tmux kill-session -t $SESSION_NAME 2>/dev/null;
+
+    tmux new-session -s "$SESSION_NAME" -c client "$(wrap yarn serve)" \;\
+         split-window -v                -c server "$(wrap yarn serve)"
+)

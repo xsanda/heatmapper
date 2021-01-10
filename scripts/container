@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
 
-cd "$(dirname "$0")"/dist &&
+cd "$(dirname "$0")/../dist" &&
 
 docker-compose up "$@"

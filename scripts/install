@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 
-cd "$(dirname "$0")" &&
+cd "$(dirname "$0")/.." &&
+
+(echo "Installing root packages"; yarn) &&
 
 (echo "Installing shared packages"; yarn --cwd shared) &&
 

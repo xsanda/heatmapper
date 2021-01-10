@@ -6,7 +6,7 @@ Note that it probably requires a modern browser, and I have not tested it other 
 
 Required software for developing: [node](https://nodejs.org/en/download/) and [yarn](https://yarnpkg.com/en/docs/install/).
 
-Recommended: an IDE such as [Visual Studio Code](https://code.visualstudio.com/), [tmux](https://github.com/tmux/tmux/wiki) if you would like to use [`./serve`](#serve), and [Docker](https://www.docker.com/products/docker-desktop) with [Docker Compose](https://docs.docker.com/compose/) for deploying.
+Recommended: an IDE such as [Visual Studio Code](https://code.visualstudio.com/), [tmux](https://github.com/tmux/tmux/wiki) if you would like to use [`yarn serve`](#yarn-serve), and [Docker](https://www.docker.com/products/docker-desktop) with [Docker Compose](https://docs.docker.com/compose/) for deploying.
 
 ## Setup
 
@@ -21,16 +21,16 @@ When you are ready to deploy, please also complete [`dist/.env`](dist/.env), by 
 
 The following scripts are located at the root of the monorepo, and apply changes to both the frontend and backend.
 
-##### `./install`
+##### yarn install-all
 
 Install all dependencies needed for developing and running the code locally.
 
-##### `./serve`
+##### yarn serve
 
 Run both servers together, using `tmux`.
 Ctrl-C in either one will kill both.
 
-See [`yarn serve`](#yarn-serve) below for more information about how these servers work.
+See [`yarn serve`](#yarn-serve-1) below for more information about how these servers work.
 
 To leave this running in the background, the default shortcut to detach from a tmux session is <kbd>^b</kbd> <kbd>d</kbd>.
 It can then be reentered with `tmux attach`.
@@ -59,35 +59,35 @@ Front
 
 The server can be built to run in Docker using Docker Compose.
 
-#### `./build`
+#### `yarn build`
 
-This will build both the frontend and backend, and place them together in the `./dist/` folder.
+This will build both the frontend and backend, and place them together in the `dist/` folder.
 This is equivalent to running `yarn build` in both projects.
 
-#### `./container`
+#### `yarn container`
 
 Run the compiled Docker instance.
-This will not reload the code; add the `--build` flag to do so, or see [`./build-container`](#build-container).
+This will not reload the code; add the `--build` flag to do so, or see [`yarn build-container`](#yarn-build-container).
 Add the `-d` flag to run in the background.
 
 Run `docker-compose down -v` to stop the container permanently.
 
-#### `./build-container`
+#### `yarn build-container`
 
-Run `./build` followed by `./container --build`, so recompiling both the frontend and backend, and updating and rerunning the container.
+Run `yarn build` followed by `yarn container --build`, so recompiling both the frontend and backend, and updating and rerunning the container.
 
 Note that if the container was previously left running with `-d`, this will leave it running until it has been rebuilt, to minimise the downtime.
 
-#### `./deploy`
+#### `yarn deploy`
 
 Deploy the container to a remote server, and (re)start it.
-This will use the configuration in [`./dist/.env`](./dist/.env) (see [`./dist/sample.env`](./dist/sample.env)).
+This will use the configuration in [`dist/.env`](dist/.env) (see [`dist/sample.env`](dist/sample.env)).
 
-#### `./build/deploy`
+#### `yarn build-deploy`
 
-Run `./build` followed by `./deploy`, so recompiling both the frontend and backend, and updating and rerunning the container on the server.
+Run `yarn build` followed by `yarn deploy`, so recompiling both the frontend and backend, and updating and rerunning the container on the server.
 
-#### `./connect`
+#### `yarn connect`
 
 Log in to your remote server.
-If this fails, then `./deploy` will also likely fail, so it is useful for testing.
+If this fails, then `yarn deploy` will also likely fail, so it is useful for testing.
