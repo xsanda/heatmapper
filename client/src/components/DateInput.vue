@@ -8,6 +8,7 @@
       :value="dateToYYYYMMDD(value)"
       @change="updateValue"
     />
+    <Icon class="icon"> expand_more </Icon>
   </div>
 </template>
 <script lang="ts">
@@ -49,7 +50,7 @@ export default class InputDate extends Vue {
   border: 1px solid gray;
   background-color: var(--background-slight);
 
-  max-width: min-content;
+  max-width: max-content;
   min-width: 3em;
 }
 
@@ -59,9 +60,16 @@ input {
   border-radius: 0.3em;
   margin: 0.5em 1em;
   color: var(--color);
+  appearance: none;
 
   &:focus {
     outline: none;
+  }
+}
+
+@supports not (-webkit-touch-callout: none) {
+  .icon {
+    display: none;
   }
 }
 </style>
