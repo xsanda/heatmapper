@@ -9,12 +9,6 @@
           </text>
         </svg>
       </div>
-      <FormComponent
-        ref="form"
-        @clear-activities="$emit('clear-activities')"
-        @add-activities="$emit('add-activities', $event)"
-        @add-activity-maps="$emit('add-activity-maps', $event)"
-      />
     </div>
     <div class="minimised-message map">
       <p><Icon>map</Icon></p>
@@ -24,17 +18,25 @@
       <p><Icon>arrow_back</Icon></p>
       <p>Back</p>
     </div>
-    <ul>
-      <ActivityItem
-        v-for="activity of activities"
-        :key="activity.id"
-        :activity="activity"
-        :selected="selected.includes(activity.id)"
-        @touchstart="isTouchScreen = true"
-        @click="click(activity.id, $event)"
-        @dblclick="forceSelect"
+    <div class="scrollable">
+      <FormComponent
+        ref="form"
+        @clear-activities="$emit('clear-activities')"
+        @add-activities="$emit('add-activities', $event)"
+        @add-activity-maps="$emit('add-activity-maps', $event)"
       />
-    </ul>
+      <ul>
+        <ActivityItem
+          v-for="activity of activities"
+          :key="activity.id"
+          :activity="activity"
+          :selected="selected.includes(activity.id)"
+          @touchstart="isTouchScreen = true"
+          @click="click(activity.id, $event)"
+          @dblclick="forceSelect"
+        />
+      </ul>
+    </div>
 
     <div class="overlay" @click="minimised = !minimised" @wheel="minimised = true" />
   </div>
@@ -121,7 +123,7 @@ export default class Sidebar extends Vue {
     if (selected !== this.localSelected) {
       this.localSelected = selected;
       this.selectionBase = selected;
-      if (selected) this.minimised = false;
+      if (selected.length !== 0) this.minimised = false;
       await this.$nextTick();
       const el = this.$el.querySelector('.selected');
       if (el) el.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
@@ -172,13 +174,17 @@ $max-size-to-minimise: 600px;
     }
   }
 
-  > ul {
+  > .scrollable {
     flex: 1;
     overflow: auto;
-    margin: 0;
     padding: 0 0 1em;
     background-color: var(--background);
     transition: margin var(--transition-speed);
+
+    > ul {
+      padding: 0;
+      margin: 0;
+    }
   }
 
   .top-box {
@@ -256,7 +262,7 @@ $max-size-to-minimise: 600px;
       margin-left: $sidebar-overlap;
       margin-right: 0;
 
-      > ul {
+      > .scrollable {
         margin-left: -$minimised-width;
         margin-right: $minimised-width;
       }
