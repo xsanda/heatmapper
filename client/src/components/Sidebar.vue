@@ -2,10 +2,10 @@
   <div class="sidebar" :class="{ minimised }">
     <div class="top-box">
       <div class="header">
-        <svg viewBox="0 0 100 36">
-          <text x="50" text-anchor="middle" font-weight="bold">
-            <tspan x="50" y="13">Strava</tspan>
-            <tspan x="50" dy="18">Heatmapper</tspan>
+        <svg viewBox="0 0 110 36">
+          <text x="55" text-anchor="middle" font-weight="bold">
+            <tspan x="55" y="13">Strava</tspan>
+            <tspan x="55" dy="18">Heatmapper</tspan>
           </text>
         </svg>
       </div>
@@ -157,20 +157,18 @@ $max-size-to-minimise: 600px;
 
   .header {
     margin-left: auto;
-    width: $sidebar-width;
+    width: 100%;
     display: flex;
     align-items: center;
     justify-content: center;
     padding: 0.5em 0 0;
 
-    transition: padding var(--transition-speed), width var(--transition-speed);
+    transition: margin var(--transition-speed), width var(--transition-speed);
 
     svg {
       height: $minimised-width;
       fill: var(--color);
       max-height: 100%;
-      transform-origin: top right;
-      transition: transform var(--transition-speed), transform-origin var(--transition-speed);
     }
   }
 
@@ -278,11 +276,8 @@ $max-size-to-minimise: 600px;
       }
 
       .header {
-        width: $minimised-width / 0.36;
-
-        svg {
-          transform: rotate(-90deg);
-        }
+        width: $minimised-width;
+        margin-right: -$minimised-width;
       }
     }
 
