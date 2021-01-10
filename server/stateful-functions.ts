@@ -4,36 +4,20 @@
  * Note that this will lead to a memory leak if too many inputs are given: they are never cleared.
  * The function must take a single string.
  *
- * @template T
  * @param fn The function to memoize.
  * @returns The memoized function.
  */
-export function memoize<T>(fn: () => T): () => T;
-export function memoize<T>(fn: (arg: string) => T): (arg: string) => T;
-export function memoize<T>(fn: (...args: any[]) => T): (...args: any[]) => T {
-  switch (fn.length) {
-    case 0: {
-      let memo: { calculated: true; value: T } | { calculated: false } = { calculated: false };
-      return () => {
-        if (!memo.calculated) {
-          memo = { calculated: true, value: fn() };
-        }
-        return memo.value;
-      };
-    }
-    case 1: {
-      const memo = {};
-      return (arg) => memo[arg] || (memo[arg] = fn(arg));
-    }
-    default:
-      throw new Error('Invalid parity of memoized function, 0 or 1 expected');
-  }
+export function memoize<T>(fn: (arg: string) => T): (arg: string) => T {
+  const memo = Object.create(null);
+  return (arg) => memo[arg] ?? (memo[arg] = fn(arg));
 }
 
 /**
  * Add a mutex to an async function, so any calls wait until previous calls
  */
-export const inOrder = <T extends any[], R = void>(fn: (...args: T) => Promise<R>): ((...args: T) => Promise<R>) => {
+export const inOrder = <T extends unknown[], R = void>(
+  fn: (...args: T) => Promise<R>,
+): ((...args: T) => Promise<R>) => {
   const lastItem = Promise.resolve();
   return (...args) => lastItem.catch(() => undefined).then(() => fn(...args));
 };

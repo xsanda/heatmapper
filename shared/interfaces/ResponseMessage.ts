@@ -1,5 +1,5 @@
-import Activity from './Activity';
-import Route from './Route';
+import type Activity from './Activity';
+import type Route from './Route';
 
 interface ActivitiesMessage {
   type: 'activities';

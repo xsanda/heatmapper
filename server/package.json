@@ -48,39 +48,5 @@
     "bracketSpacing": true,
     "singleQuote": true,
     "trailingComma": "all"
-  },
-  "eslintConfig": {
-    "root": true,
-    "env": {
-      "node": true
-    },
-    "extends": [
-      "eslint:recommended",
-      "airbnb-base",
-      "plugin:@typescript-eslint/recommended",
-      "prettier"
-    ],
-    "plugins": [
-      "prettier",
-      "@typescript-eslint/eslint-plugin"
-    ],
-    "parser": "@typescript-eslint/parser",
-    "parserOptions": {
-      "sourceType": "module"
-    },
-    "rules": {
-      "prettier/prettier": "error",
-      "no-return-await": "off",
-      "no-param-reassign": [
-        "error",
-        {
-          "props": false
-        }
-      ],
-      "comma-dangle": [
-        "error",
-        "always-multiline"
-      ]
-    }
   }
 }

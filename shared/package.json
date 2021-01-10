@@ -1,4 +1,5 @@
 {
+  "name": "heatmapper-shared",
   "private": true,
   "dependencies": {
     "dotenv": "^8.2.0"

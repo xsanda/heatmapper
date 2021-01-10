@@ -1,4 +1,4 @@
-import TimeRange from './TimeRange';
+import type TimeRange from './TimeRange';
 
 export default interface RequestMessage {
   activities?: TimeRange[];

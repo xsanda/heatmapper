@@ -7,7 +7,7 @@ function sort(ranges: TimeRange[]): TimeRange[] {
   return ranges.slice().sort(({ start: a = -Infinity }, { start: b = -Infinity }) => a - b);
 }
 function* pairs(ranges: TimeRange[]): Generator<[TimeRange?, TimeRange?]> {
-  for (let i = 0; i <= ranges.length; i++) {
+  for (let i = 0; i <= ranges.length; i += 1) {
     yield [ranges[i - 1], ranges[i]];
   }
 }
@@ -15,7 +15,7 @@ function* pairs(ranges: TimeRange[]): Generator<[TimeRange?, TimeRange?]> {
 namespace TimeRange {
   export function merge(ranges: TimeRange[]): TimeRange[] {
     const merged: TimeRange[] = [];
-    let previous: TimeRange | undefined = undefined;
+    let previous: TimeRange | undefined;
 
     for (const range of sort(ranges)) {
       if (previous === undefined) previous = { ...range };
@@ -45,7 +45,7 @@ namespace TimeRange {
     return invert(invert(ranges).concat(toSubtract));
   }
 
-  export function cap(ranges: TimeRange[], start: number = 0, end?: number): TimeRange[] {
+  export function cap(ranges: TimeRange[], start = 0, end?: number): TimeRange[] {
     return subtract(ranges, [{ start: end ?? Date.now() / 1000 }, { end: start }]);
   }
 }

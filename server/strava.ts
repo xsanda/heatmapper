@@ -1,11 +1,31 @@
-import fetch, { Response } from 'node-fetch';
-import { v4 as uuid, validate as validateUUID } from 'uuid';
-import lockfile from 'proper-lockfile';
-import { mkdir, readFile, writeFile } from 'fs/promises';
-import NeedsLogin from './needs-login';
 import '../shared/config/dotenv';
 
+import { mkdir, readFile, writeFile } from 'fs/promises';
+import type { Response } from 'node-fetch';
+import fetch from 'node-fetch';
+import lockfile from 'proper-lockfile';
+import { v4 as uuid, validate as validateUUID } from 'uuid';
+
+import NeedsLogin from './needs-login';
+
 const { STRAVA_CLIENT_ID: stravaClientId, STRAVA_CLIENT_SECRET: stravaClientSecret } = process.env;
+
+export type SummaryActivity = {
+  id: number;
+  name: string;
+  start_date_local: string;
+  map: { summary_polyline: string };
+  type: string;
+};
+
+export type SummaryRoute = {
+  id_str: string;
+  name: string;
+  created_at: string;
+  map: { summary_polyline: string };
+  type: string;
+  sub_type: number;
+};
 
 interface OAuthCallbackResponse {
   code: string;
@@ -28,6 +48,11 @@ const addCallback = (name: string): Promise<OAuthCallbackResponse> =>
       reject();
     }, CALLBACK_TIMEOUT);
   });
+
+export function validTokenCallback(data: Partial<OAuthCallbackResponse>): data is OAuthCallbackResponse {
+  const validString = (val: unknown): val is string => !!val && typeof val === 'string';
+  return validString(data.code) && validString(data.state) && validString(data.scope);
+}
 
 export function tokenExchange(data: OAuthCallbackResponse): boolean {
   const resolver = callbacks.get(data.state);
@@ -247,7 +272,7 @@ export class Strava {
     return json;
   }
 
-  private async getActivitiesPage(i: number, start?: number, end?: number): Promise<unknown[]> {
+  private async getActivitiesPage(i: number, start?: number, end?: number): Promise<SummaryActivity[]> {
     return this.stravaAPI('/athlete/activities', {
       per_page: 200,
       page: i,
@@ -259,7 +284,7 @@ export class Strava {
   /**
    * Fetches your data from the Strava API
    */
-  async *getStravaActivitiesPages(start?: number, end?: number): AsyncGenerator<unknown[], void, undefined> {
+  async *getStravaActivitiesPages(start?: number, end?: number): AsyncGenerator<SummaryActivity[], void, undefined> {
     let i = 1;
     while (true) {
       const page = await this.getActivitiesPage(i, start, end);
@@ -279,7 +304,7 @@ export class Strava {
     }
   }
 
-  private async getRoutesPage(i: number): Promise<unknown[]> {
+  private async getRoutesPage(i: number): Promise<SummaryRoute[]> {
     return this.stravaAPI('/athletes/{athlete}/routes', {
       per_page: 200,
       page: i,
@@ -289,7 +314,7 @@ export class Strava {
   /**
    * Fetches your data from the Strava API
    */
-  public async *getStravaRoutesPages(): AsyncGenerator<unknown[], void, undefined> {
+  public async *getStravaRoutesPages(): AsyncGenerator<SummaryRoute[], void, undefined> {
     let i = 1;
     while (true) {
       // eslint-disable-next-line no-await-in-loop
@@ -311,7 +336,7 @@ export class Strava {
     }
   }
 
-  async getActivity(id: number | string): Promise<unknown> {
+  async getActivity(id: number | string): Promise<SummaryActivity> {
     return await this.stravaAPI(`/activities/${id}`);
   }
 }

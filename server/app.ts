@@ -1,12 +1,13 @@
 // @ts-check
 
 import bodyParser from 'body-parser';
-import express from 'express';
-import expressWs from 'express-ws';
 import history from 'connect-history-api-fallback';
 import cookieParser from 'cookie-parser';
+import express from 'express';
+import expressWs from 'express-ws';
+
+import { SERVER_DOMAIN, SERVER_PORT } from '../shared/config/dotenv';
 import apiRouter from './api';
-import { SERVER_PORT, SERVER_DOMAIN } from '../shared/config/dotenv'
 
 const app = express();
 expressWs(app);
@@ -42,6 +43,6 @@ app.use(
 );
 
 app.listen(SERVER_PORT, () => {
-  console.log(`Heatmapper backend listening on port ${SERVER_PORT}.`)
+  console.log(`Heatmapper backend listening on port ${SERVER_PORT}.`);
   console.log(`Visit the latest version at ${SERVER_DOMAIN}/`);
 });
