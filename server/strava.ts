@@ -1,11 +1,9 @@
 import fetch, { Response } from 'node-fetch';
 import { v4 as uuid, validate as validateUUID } from 'uuid';
-import dotenv from 'dotenv';
 import lockfile from 'proper-lockfile';
 import { mkdir, readFile, writeFile } from 'fs/promises';
 import NeedsLogin from './needs-login';
-
-dotenv.config();
+import '../shared/config/dotenv';
 
 const { STRAVA_CLIENT_ID: stravaClientId, STRAVA_CLIENT_SECRET: stravaClientSecret } = process.env;
 
