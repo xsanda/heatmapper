@@ -249,7 +249,6 @@ export default function apiRouter(domain: string): express.Router {
   });
 
   router.get('/token', (req, res) => {
-    console.log('Valid response:', validTokenCallback(req.query));
     const successful = (validTokenCallback(req.query) && tokenExchange(req.query)) || true;
     const [code, html] = successful ? [200, 'static/auth.html'] : [400, 'static/auth-error.html'];
     res.writeHead(code, { 'Content-Type': 'text/html; charset=utf-8' });
