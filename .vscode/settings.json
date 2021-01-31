@@ -6,8 +6,14 @@
   "vetur.format.defaultFormatter.js": "none",
   "vetur.format.defaultFormatter.ts": "none",
   "[vue]": {
-    "editor.rulers": [
-      100
-    ],
+    "editor.rulers": [100]
   },
+  "search.exclude": {
+    "**/.yarn": true,
+    "**/.pnp.*": true
+  },
+  "eslint.nodePath": ".yarn/sdks",
+  "prettier.prettierPath": ".yarn/sdks/prettier/index.js",
+  "typescript.tsdk": ".yarn/sdks/typescript/lib",
+  "typescript.enablePromptUseWorkspaceTsdk": true
 }

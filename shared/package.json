@@ -8,7 +8,7 @@
     "lint": "eslint --fix . --ext .ts"
   },
   "devDependencies": {
-    "eslint": "^7.5.0"
+    "eslint": "^7.19.0"
   },
   "prettier": {
     "printWidth": 100,
