@@ -4,8 +4,17 @@ cd "$(dirname "$0")/.." &&
 
 . scripts/connect &&
 
+# On the server, start the docker process, clear old docker images and then set up port forwarding
+# (assuming the server is set up as in this gist:
+# https://gist.github.com/xsanda/59686990f42f4dddae01dffa56618ea4, if not then this stage is
+# simply skipped).
 (
-  DEPLOY_COMMAND="$(printf "docker-compose -f%q/docker-compose.yml up --build -d && docker system prune -f" "${DEPLOY_DIR:-.}")"
+  RAW_DOMAIN="${DOMAIN/#*\/\//}"
+  DEPLOY_COMMAND="$(printf "
+    docker-compose -f%q/docker-compose.yml up --build -d &&
+    docker system prune -f &&
+    (command -v add-site > /dev/null && add-site %q %d; true)
+  " "${DEPLOY_DIR:-.}" "$RAW_DOMAIN" "$SERVER_PORT")"
 
   rsync -re"ssh $DEPLOY_FLAG" dist/ "$DEPLOY_TARGET":"${DEPLOY_DIR:-.}" &&
   ssh "$DEPLOY_FLAG" "$DEPLOY_TARGET" "$DEPLOY_COMMAND"
