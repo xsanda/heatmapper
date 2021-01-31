@@ -6,7 +6,7 @@ import cookieParser from 'cookie-parser';
 import express from 'express';
 import expressWs from 'express-ws';
 
-import { SERVER_DOMAIN, SERVER_PORT } from '../shared/config/dotenv';
+import { SERVER_DOMAIN, SERVER_PORT } from '@strava-heatmapper/shared/config/dotenv';
 import apiRouter from './api';
 
 const app = express();

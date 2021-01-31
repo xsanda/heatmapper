@@ -21,7 +21,7 @@
 <script lang="ts">
 import { Component, Ref, Vue } from 'vue-property-decorator';
 
-import type { Activity } from '../../shared/interfaces';
+import type { Activity } from '@strava-heatmapper/shared/interfaces';
 import MapComponent from './components/Map.vue';
 
 @Component({

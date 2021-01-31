@@ -5,7 +5,7 @@ import mapboxgl, { LngLatBounds } from 'mapbox-gl';
 import type { VNode } from 'vue';
 import { Component, Emit, Prop, PropSync, Ref, Vue, Watch } from 'vue-property-decorator';
 
-import type Activity from '../../../shared/interfaces/Activity';
+import type Activity from '@strava-heatmapper/shared/interfaces/Activity';
 
 declare global {
   interface Window {
@@ -68,7 +68,7 @@ const layers = {
 
 type LayerDef = typeof layers[keyof typeof layers];
 
-const buildLineLayer = (id: string, layer: LayerDef): mapboxgl.Layer => ({
+const buildLineLayer = (id: string, layer: LayerDef): mapboxgl.AnyLayer => ({
   id,
   type: 'line',
   source: layer.source,

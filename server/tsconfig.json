@@ -13,8 +13,7 @@
     "downlevelIteration": true,
     "moduleResolution": "node",
     "allowSyntheticDefaultImports": true,
-    "outDir": "../dist",
-    "rootDir": "..",
+    "outDir": "../dist/server",
     "strictNullChecks": true
   }
 }

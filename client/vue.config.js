@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 const Webpack = require('webpack');
 
-const { VUE_DEV_PORT, SERVER_DOMAIN } = require('../shared/config/dotenv');
+const { VUE_DEV_PORT, SERVER_DOMAIN } = require('@strava-heatmapper/shared/config/dotenv');
 
 module.exports = {
   chainWebpack(config) {

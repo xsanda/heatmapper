@@ -1,9 +1,15 @@
 .DS_Store
 node_modules
 /dist/*/
+/dist/package.json
+/dist/yarn.lock
+/dist/sessions
+/server/sessions
 
-# env files
+# env files and key files
 .env
+/dist/*.pem
+/*.pem
 
 # Log files
 npm-debug.log*

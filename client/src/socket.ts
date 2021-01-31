@@ -1,4 +1,4 @@
-import type { RequestMessage } from '../../shared/interfaces';
+import type { RequestMessage } from '@strava-heatmapper/shared/interfaces';
 
 let socketID = 0;
 

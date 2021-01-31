@@ -6,7 +6,7 @@ Note that it probably requires a modern browser, and I have not tested it other 
 
 Required software for developing: [node](https://nodejs.org/en/download/) and [yarn](https://yarnpkg.com/en/docs/install/).
 
-Recommended: an IDE such as [Visual Studio Code](https://code.visualstudio.com/), [tmux](https://github.com/tmux/tmux/wiki) if you would like to use [`yarn serve`](#yarn-serve), and [Docker](https://www.docker.com/products/docker-desktop) with [Docker Compose](https://docs.docker.com/compose/) for deploying.
+Recommended: an IDE such as [Visual Studio Code](https://code.visualstudio.com/), [tmux](https://github.com/tmux/tmux/wiki) if you would like to use [`yarn serve`](#yarn-serve), and [Docker](https://www.docker.com/products/docker-desktop) with [Docker Compose](https://docs.docker.com/compose/) for deploying locally.
 
 ## Setup
 

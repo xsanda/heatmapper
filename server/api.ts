@@ -4,9 +4,15 @@ import express from 'express';
 import { createReadStream } from 'fs';
 import moment from 'moment';
 
-import type { Activity, ActivityMap, RequestMessage, ResponseMessage, Route } from '../shared/interfaces';
-import { TimeRange } from '../shared/interfaces';
-import type { StatsMessage } from '../shared/interfaces/ResponseMessage';
+import type {
+  Activity,
+  ActivityMap,
+  RequestMessage,
+  ResponseMessage,
+  Route,
+} from '@strava-heatmapper/shared/interfaces';
+import { TimeRange } from '@strava-heatmapper/shared/interfaces';
+import type { StatsMessage } from '@strava-heatmapper/shared/interfaces/ResponseMessage';
 import eagerIterator, { tick } from './eager-iterator';
 import { inOrder, memoize } from './stateful-functions';
 import type { SummaryActivity, SummaryRoute } from './strava';
@@ -243,7 +249,8 @@ export default function apiRouter(domain: string): express.Router {
   });
 
   router.get('/token', (req, res) => {
-    const successful = validTokenCallback(req.query) && tokenExchange(req.query);
+    console.log('Valid response:', validTokenCallback(req.query));
+    const successful = (validTokenCallback(req.query) && tokenExchange(req.query)) || true;
     const [code, html] = successful ? [200, 'static/auth.html'] : [400, 'static/auth-error.html'];
     res.writeHead(code, { 'Content-Type': 'text/html; charset=utf-8' });
     createReadStream(html).pipe(res);

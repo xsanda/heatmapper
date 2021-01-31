@@ -1,4 +1,4 @@
-import '../shared/config/dotenv';
+import '@strava-heatmapper/shared/config/dotenv';
 
 import { mkdir, readFile, writeFile } from 'fs/promises';
 import type { Response } from 'node-fetch';
@@ -68,6 +68,7 @@ interface Cache {
   stravaRefreshToken?: string;
   stravaAthlete?: number;
   stravaAccessToken?: string;
+  // TODO: store expiry
 }
 
 /**
@@ -179,14 +180,6 @@ export class Strava {
     }));
 
     console.debug(`ref: ${data.refresh_token?.substring(0, 6)}`);
-
-    // Hourly
-    setTimeout(async () => {
-      await updateFile(sessionCacheFile(this.token), undefined, (oldCache: Cache) => {
-        delete oldCache.stravaAccessToken;
-      });
-      this.getStravaToken();
-    }, 1000 * 60 * 60);
 
     return cache.stravaAccessToken;
   }

@@ -23,8 +23,7 @@
       "DOM.Iterable",
       "ScriptHost"
     ],
-    "rootDir": "..",
-    "outDir": ".."
+    "outDir": "../dist"
   },
   "paths": {
     "@/*": [
@@ -35,7 +34,6 @@
     "src/**/*.ts",
     "src/**/*.tsx",
     "src/**/*.vue",
-    "../shared/**/*.ts"
   ],
   "exclude": [
     "node_modules"

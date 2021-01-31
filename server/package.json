@@ -1,15 +1,16 @@
 {
-  "name": "heatmapper-server",
+  "name": "@strava-heatmapper/server",
   "version": "0.1.0",
   "private": true,
   "scripts": {
     "serve": "ts-node app.ts",
     "lint": "eslint --fix '*.ts'",
-    "clear-built": "[[ -d ../dist/server ]] && rm -r ../dist/server; [[ -d ../dist/shared ]] && rm -r ../dist/shared; true",
-    "copy-for-deployment": "cp -r package.json static ../dist/server/ && cp ../shared/package.json ../dist/shared/ && mkdir -p ../dist/sessions",
+    "clear-built": "[[ -d ../dist/server ]] && rm -r ../dist/server; true",
+    "copy-for-deployment": "cp -r package.json static ../dist/server/",
     "build": "yarn clear-built; tsc --build && yarn copy-for-deployment"
   },
   "dependencies": {
+    "@strava-heatmapper/shared": "^0.1.0",
     "@types/proper-lockfile": "^4.1.1",
     "body-parser": "^1.19.0",
     "connect-history-api-fallback": "^1.6.0",

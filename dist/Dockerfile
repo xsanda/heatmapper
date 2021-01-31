@@ -6,8 +6,7 @@ WORKDIR /usr/src/app/dist/server
 
 RUN yarn global add pm2
 
-RUN yarn --prod --no-lockfile
-RUN yarn --prod --no-lockfile --cwd ../shared
+RUN yarn --prod --frozen-lockfile
 
 EXPOSE 8080
 

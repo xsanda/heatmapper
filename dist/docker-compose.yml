@@ -1,8 +1,9 @@
+version: '2'
 services:
   heatmapper:
     build: .
     ports:
-      - "8080:8080"
+      - '8080:8080'
     volumes:
       - .env:/usr/src/app/dist/.env
       - ./sessions:/usr/src/app/dist/server/sessions
