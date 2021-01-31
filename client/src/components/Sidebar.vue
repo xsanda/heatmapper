@@ -43,9 +43,9 @@
 </template>
 
 <script lang="ts">
+import type Activity from '@strava-heatmapper/shared/interfaces/Activity';
 import { Component, Emit, Prop, Ref, Vue, Watch } from 'vue-property-decorator';
 
-import type Activity from '@strava-heatmapper/shared/interfaces/Activity';
 import ActivityItem from './ActivityItem.vue';
 import FormComponent from './Form.vue';
 import Icon from './Icon.vue';

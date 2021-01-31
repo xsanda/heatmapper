@@ -1,9 +1,5 @@
 import 'moment/min/locales';
 
-import express from 'express';
-import { createReadStream } from 'fs';
-import moment from 'moment';
-
 import type {
   Activity,
   ActivityMap,
@@ -13,6 +9,10 @@ import type {
 } from '@strava-heatmapper/shared/interfaces';
 import { TimeRange } from '@strava-heatmapper/shared/interfaces';
 import type { StatsMessage } from '@strava-heatmapper/shared/interfaces/ResponseMessage';
+import express from 'express';
+import { createReadStream } from 'fs';
+import moment from 'moment';
+
 import eagerIterator, { tick } from './eager-iterator';
 import { inOrder, memoize } from './stateful-functions';
 import type { SummaryActivity, SummaryRoute } from './strava';

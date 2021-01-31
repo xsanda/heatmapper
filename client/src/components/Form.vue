@@ -45,10 +45,10 @@
 </template>
 
 <script lang="ts">
-import { Component, Emit, Vue, Watch } from 'vue-property-decorator';
-
 import type { Activity, ResponseMessage, Route } from '@strava-heatmapper/shared/interfaces';
 import { TimeRange } from '@strava-heatmapper/shared/interfaces';
+import { Component, Emit, Vue, Watch } from 'vue-property-decorator';
+
 import activityTypes from '../activityTypes';
 import Socket from '../socket';
 import DateInput from './DateInput.vue';

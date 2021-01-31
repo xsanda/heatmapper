@@ -18,10 +18,9 @@
 </template>
 
 <script lang="ts">
+import type { Activity, Route } from '@strava-heatmapper/shared/interfaces';
 import { Component, Prop, Vue } from 'vue-property-decorator';
 import Spinner from 'vue-simple-spinner';
-
-import type { Activity, Route } from '@strava-heatmapper/shared/interfaces';
 
 @Component({
   components: { Spinner },
