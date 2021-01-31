@@ -85,12 +85,17 @@ body {
   color: #2c3e50;
 }
 
+a {
+  color: var(--link-color);
+}
+
 :root {
   --color: #222;
   --background: #fff;
   --background-slight: #eee;
   --background-strong: #ccc;
   --transition-speed: 0.5s;
+  --link-color: blue;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -99,6 +104,7 @@ body {
     --background: #222;
     --background-slight: #333;
     --background-strong: #555;
+    --link-color: lightblue;
   }
 }
 </style>
