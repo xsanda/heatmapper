@@ -89,11 +89,14 @@ function convertActivity({ id, map }, highDetail = false): ActivityMap {
  */
 function sortPromises<T>(promises: Promise<T>[]): Promise<T>[] {
   const sorted: Promise<T>[] = [];
-  const resolvers: ((value: T) => void)[] = [];
-  let resolved = 0;
+  const handlers: { resolve: (value: T | PromiseLike<T>) => void; reject: (reason?: unknown) => void }[] = [];
+  let done = 0;
   promises.forEach((promise) => {
-    sorted.push(new Promise((resolve) => resolvers.push(resolve)));
-    promise.then((value) => resolvers[resolved++](value));
+    sorted.push(new Promise((resolve, reject) => handlers.push({ resolve, reject })));
+    promise.then(
+      (value) => handlers[done++].resolve(value),
+      (value) => handlers[done++].reject(value),
+    );
   });
   return sorted;
 }

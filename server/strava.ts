@@ -68,7 +68,7 @@ interface Cache {
   stravaRefreshToken?: string;
   stravaAthlete?: number;
   stravaAccessToken?: string;
-  // TODO: store expiry
+  stravaExpiry?: number;
 }
 
 /**
@@ -127,6 +127,10 @@ export class Strava {
       const jsonStr = await readFile(sessionCacheFile(this.token), 'utf-8');
       const cache: Cache = JSON.parse(jsonStr);
       if (!cache.stravaAthlete) throw new NeedsLogin();
+      const currentEpochSeconds = Date.now() / 1e3;
+      if (cache.stravaExpiry && cache.stravaExpiry < currentEpochSeconds) {
+        delete cache.stravaAccessToken;
+      }
       return cache;
     } catch (error) {
       return {};
@@ -177,6 +181,7 @@ export class Strava {
       ...oldCache,
       stravaAccessToken: data.access_token,
       stravaRefreshToken: data.refresh_token,
+      stravaExpiry: data.expires_at,
     }));
 
     console.debug(`ref: ${data.refresh_token?.substring(0, 6)}`);
