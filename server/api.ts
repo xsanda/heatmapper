@@ -13,8 +13,8 @@ import express from 'express';
 import { createReadStream } from 'fs';
 import moment from 'moment';
 
-import eagerIterator, { tick } from './eager-iterator';
-import { inOrder, memoize } from './stateful-functions';
+import eagerIterator from './eager-iterator';
+import { completeInOrder, memoize } from './stateful-functions';
 import type { SummaryActivity, SummaryRoute } from './strava';
 import { Strava, tokenExchange, validTokenCallback } from './strava';
 
@@ -177,11 +177,10 @@ export default function apiRouter(domain: string): express.Router {
       stats.finding.finished = true;
     }
 
-    const sendMaps = inOrder(async (activities: string[]) => {
+    const sendMaps = completeInOrder(async (activities: string[]) => {
       const activityMaps = sortPromises(
         activities.map(async (id) => {
           const highDetail = false;
-          await tick();
           let map = fetchedMaps.get(id);
           if (map) fetchedMaps.delete(id);
           if (map && !highDetail) return [id, map];
@@ -189,13 +188,15 @@ export default function apiRouter(domain: string): express.Router {
           return [id, map];
         }),
       );
-      for await (const chunk of chunkAsync(activityMaps, 50)) {
-        // eslint-disable-next-line no-await-in-loop
-        if (!live) return;
-        const maps = Object.fromEntries(chunk);
-        send({ type: 'maps', chunk: maps } as ResponseMessage);
-      }
-      sendStats();
+      // mutex section
+      return async () => {
+        for await (const chunk of chunkAsync(activityMaps, 50)) {
+          if (!live) return;
+          const maps = Object.fromEntries(chunk);
+          send({ type: 'maps', chunk: maps } as ResponseMessage);
+        }
+        sendStats();
+      };
     });
 
     ws.on('message', async (data) => {
