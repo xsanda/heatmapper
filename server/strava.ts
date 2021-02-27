@@ -106,18 +106,13 @@ async function updateFile<T>(file: string, initial: T, transformer: (contents: T
 }
 
 export class Strava {
-  private domain: string;
-
-  private requestLogin: (token: string, url: string) => Promise<void>;
-
-  private token: string;
+  private readonly token: string;
 
   constructor(
-    domain: string,
+    private readonly domain: string,
     tokenCookie: string | undefined,
-    requestLogin: (token: string, url: string) => Promise<void>,
+    private readonly requestLogin: (token: string, url: string) => Promise<void>,
   ) {
-    this.domain = domain;
     this.token = tokenCookie && validateUUID(tokenCookie) ? tokenCookie : uuid();
     this.requestLogin = requestLogin;
   }
