@@ -59,7 +59,7 @@ const layers = {
   },
   selected: {
     source: 'selected',
-    color: '#0F0',
+    color: '#0CF',
     opacity: 1,
     width: fromZoom([5, 4], [17, 8]),
   },
