@@ -13,11 +13,15 @@ export function memoize<T>(fn: (arg: string) => T): (arg: string) => T {
 }
 
 /**
- * Add a mutex to an async function, so any calls wait until previous calls
+ * Add a mutex to an async function, so any calls wait until previous calls have resolved
  */
 export const inOrder = <T extends unknown[], R = void>(
   fn: (...args: T) => Promise<R>,
 ): ((...args: T) => Promise<R>) => {
-  const lastItem = Promise.resolve();
-  return (...args) => lastItem.catch(() => undefined).then(() => fn(...args));
+  let lastItem = Promise.resolve();
+  return (...args) => {
+    const promise = lastItem.catch(() => undefined).then(() => fn(...args));
+    lastItem = promise.then(() => undefined);
+    return promise;
+  };
 };
