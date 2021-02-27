@@ -8,7 +8,6 @@ import { Component, Emit, Prop, PropSync, Ref, Vue, Watch } from 'vue-property-d
 
 declare global {
   interface Window {
-    // eslint-disable-next-line no-use-before-define
     cachedMapComponent?: Map;
   }
 }

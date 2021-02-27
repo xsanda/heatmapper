@@ -73,7 +73,6 @@ function count(n: number, singular: string, plural?: string): string {
 const countActivities = (n: number) => count(n, 'activity', 'activities');
 
 function findingString(
-  // eslint-disable-next-line no-use-before-define
   { started = false, finished = false, length = 0 }: Form['stats']['finding'] = {},
   inCache = false,
 ) {
@@ -384,7 +383,6 @@ export default class Form extends Vue {
             break;
           }
           default:
-            // eslint-disable-next-line no-console
             console.warn(`Unknown message ${data}`);
         }
         this.checkFinished(socket);

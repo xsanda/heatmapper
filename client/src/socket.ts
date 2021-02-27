@@ -14,7 +14,6 @@ export default class Socket {
   private verbose: boolean;
 
   private log(...args: unknown[]) {
-    // eslint-disable-next-line no-console
     if (this.verbose) console.log(...args);
   }
 

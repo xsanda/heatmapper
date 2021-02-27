@@ -138,7 +138,6 @@ export default function apiRouter(domain: string): express.Router {
      * Fetches your data from the Strava API
      */
     async function* activitiesIterator(start?: number, end?: number): AsyncGenerator<Activity[]> {
-      // eslint-disable-next-line no-restricted-syntax
       for await (const page of eagerIterator(strava.getStravaActivitiesPages(start, end))) {
         if (!live) return;
 
@@ -162,7 +161,6 @@ export default function apiRouter(domain: string): express.Router {
     async function* routesIterator(): AsyncGenerator<Route[]> {
       const routes: Route[] = [];
 
-      // eslint-disable-next-line no-restricted-syntax
       for await (const page of eagerIterator(strava.getStravaRoutesPages())) {
         if (!live) return;
 
@@ -204,10 +202,8 @@ export default function apiRouter(domain: string): express.Router {
       if (message.activities) {
         stats.finding.started = true;
 
-        // eslint-disable-next-line no-restricted-syntax
         for (const { start, end } of TimeRange.cap(message.activities)) {
           sendStats();
-          // eslint-disable-next-line no-restricted-syntax, no-await-in-loop
           for await (const activities of activitiesIterator(start, end)) {
             if (!live) return;
             activities.forEach(({ map, id }) => {
@@ -229,7 +225,6 @@ export default function apiRouter(domain: string): express.Router {
         stats.finding.started = true;
 
         sendStats();
-        // eslint-disable-next-line no-restricted-syntax, no-await-in-loop
         for await (const routes of routesIterator()) {
           if (!live) return;
           routes.forEach(({ map, id }) => {

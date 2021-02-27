@@ -291,7 +291,6 @@ export class Strava {
    * Fetches your data from the Strava API
    */
   async *getStravaActivities(start?: number, end?: number): AsyncGenerator<unknown, void, undefined> {
-    // eslint-disable-next-line no-restricted-syntax
     for await (const page of this.getStravaActivitiesPages(start, end)) {
       yield* page;
     }
@@ -310,7 +309,6 @@ export class Strava {
   public async *getStravaRoutesPages(): AsyncGenerator<SummaryRoute[], void, undefined> {
     let i = 1;
     while (true) {
-      // eslint-disable-next-line no-await-in-loop
       const page = await this.getRoutesPage(i);
       console.log('route page', i, 'has length', page.length);
       if (!page.length) break;
@@ -323,7 +321,6 @@ export class Strava {
    * Fetches your data from the Strava API
    */
   async *getStravaRoutes(): AsyncGenerator<unknown, void, undefined> {
-    // eslint-disable-next-line no-restricted-syntax
     for await (const page of this.getStravaRoutesPages()) {
       yield* page;
     }
