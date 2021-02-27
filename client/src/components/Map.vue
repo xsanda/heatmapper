@@ -186,40 +186,15 @@ export default class Map extends Vue {
     (source as mapboxgl.GeoJSONSource)?.setData(makeGeoJsonData(next));
   }
 
-  mapLoaded(map: mapboxgl.Map): void {
+  async mapLoaded(map: mapboxgl.Map): Promise<void> {
     map.resize();
 
-    // // eslint-disable-next-line no-restricted-syntax
-    // for (const id of sources) {
-    //   console.log('Adding source', id, makeGeoJson());
-    //   map.addSource(id, makeGeoJson());
-    //   // eslint-disable-next-line no-await-in-loop
-    //   await new Promise((res) => setTimeout(res, 500));
-    // }
     sources.forEach((id) => map.addSource(id, makeGeoJson()));
-    // // map.addSource('global-heatmap', {
-    // //   type: 'raster',
-    // //   tiles: [
-    // //     'https://heatmap-external-a.strava.com/tiles-auth/run/mobileblue/{z}/{x}/{y}.png',
-    // //     'https://heatmap-external-b.strava.com/tiles-auth/run/mobileblue/{z}/{x}/{y}.png',
-    // //     'https://heatmap-external-c.strava.com/tiles-auth/run/mobileblue/{z}/{x}/{y}.png',
-    // //   ],
-    // //   tileSize: 256,
-    // //   attribution: 'Blue heatmap by Strava.',
-    // // });
     Object.entries(layers).forEach(([id, layer]) => map.addLayer(buildLineLayer(id, layer)));
-    // // map.addLayer({
-    // //   id: 'global-heatmap',
-    // //   type: 'raster',
-    // //   source: 'global-heatmap',
-    // //   minzoom: 0,
-    // //   maxzoom: 15,
-    // // });
 
-    this.$nextTick(() => {
-      this.applyActivities(this.activities, 'lines');
-      this.applyActivities(this.selectedActivities, 'selected');
-    });
+    await this.$nextTick();
+    this.applyActivities(this.activities, 'lines');
+    this.applyActivities(this.selectedActivities, 'selected');
   }
 
   click(map: mapboxgl.Map, e: mapboxgl.MapMouseEvent): void {
