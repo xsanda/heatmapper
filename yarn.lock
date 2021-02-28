@@ -2322,7 +2322,7 @@
     "@vue/reactivity" "3.0.5"
     "@vue/shared" "3.0.5"
 
-"@vue/runtime-dom@3.0.5", "@vue/runtime-dom@latest":
+"@vue/runtime-dom@3.0.5":
   version "3.0.5"
   resolved "https://registry.yarnpkg.com/@vue/runtime-dom/-/runtime-dom-3.0.5.tgz#1ce2c9c449e26ab06963da0064096e882a7a8935"
   integrity sha512-iilX1KySeIzHHtErT6Y44db1rhWK5tAI0CiJIPr+SJoZ2jbjoOSE6ff/jfIQakchbm1d6jq6VtRVnp5xYdOXKA==
