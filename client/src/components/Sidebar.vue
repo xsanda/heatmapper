@@ -94,8 +94,13 @@ export default class Sidebar extends Vue {
 
   isTouchScreen = false;
 
+  private toggleInArray<T>(array: T[], item: T): T[] {
+    if (array.includes(item)) return array.filter((x) => x !== item);
+    else return [...array, item];
+  }
+
   getSelection(id: number, e: MouseEvent): number[] {
-    if (e.metaKey || e.ctrlKey) return [...this.selected, id];
+    if (e.metaKey || e.ctrlKey) return this.toggleInArray(this.selected, id);
     if (e.shiftKey) return getRange(this.activities, id, this.selectionBase);
     return [id];
   }
