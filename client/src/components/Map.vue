@@ -37,30 +37,32 @@ const makeGeoJson = (activities = []): mapboxgl.GeoJSONSourceRaw => ({
 });
 
 const sources = ['lines', 'selected'];
+const width = fromZoom([5, 1], [14, 4], [22, 8]);
+const selectedWidth = fromZoom([5, 4], [14, 8]);
 const layers = {
   lines: {
     source: 'lines',
     color: '#00F',
     opacity: fromZoom([5, 0.75], [10, 0.35]),
-    width: fromZoom([5, 1], [17, 4], [22, 8]),
+    width,
   },
   medium: {
     source: 'lines',
     color: '#F00',
     opacity: fromZoom([5, 0.2], [10, 0.08]),
-    width: fromZoom([5, 1], [17, 4], [22, 8]),
+    width,
   },
   hot: {
     source: 'lines',
     color: '#FF0',
     opacity: fromZoom([5, 0.1], [10, 0.04]),
-    width: fromZoom([5, 1], [17, 4], [22, 8]),
+    width,
   },
   selected: {
     source: 'selected',
     color: '#0CF',
     opacity: 1,
-    width: fromZoom([5, 4], [17, 8]),
+    width: selectedWidth,
   },
 };
 
